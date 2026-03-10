@@ -2,15 +2,14 @@
 
 import { useState } from 'react';
 import clsx from 'clsx';
-import type { Project, ActionItem } from '../lib/supabase';
+import type { Project } from '../lib/supabase';
 import { StatusBadge, ProgressBar, CompletionDot } from './StatusBadge';
 
 interface ProjectCardProps {
   project: Project;
-  index:   number;
 }
 
-export default function ProjectCard({ project, index }: ProjectCardProps) {
+export default function ProjectCard({ project }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false);
   const actions = project.action_items ?? [];
   const openItems = actions.filter(a => !a.is_info_only && a.completion_pct < 100);

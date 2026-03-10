@@ -19,8 +19,8 @@ export default function CoilSpringSection({ projects }: { projects: Project[] })
         </div>
       ) : (
         <div className="space-y-4">
-          {coilProjects.map((p, i) => (
-            <ProjectCard key={p.id} project={p} index={i} />
+          {coilProjects.map((p) => (
+            <ProjectCard key={p.id} project={p} />
           ))}
         </div>
       )}

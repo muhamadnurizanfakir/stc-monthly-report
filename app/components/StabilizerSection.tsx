@@ -19,8 +19,8 @@ export default function StabilizerSection({ projects }: { projects: Project[] })
         </div>
       ) : (
         <div className="space-y-4">
-          {stabiProjects.map((p, i) => (
-            <ProjectCard key={p.id} project={p} index={i} />
+          {stabiProjects.map((p) => (
+            <ProjectCard key={p.id} project={p} />
           ))}
         </div>
       )}
