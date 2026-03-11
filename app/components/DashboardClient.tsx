@@ -1,88 +1,113 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import type { Report, Project, ShohinProject, EngineeringProject } from '../lib/supabase';
-import Sidebar from './Sidebar';
-import OverviewSection from './OverviewSection';
-import CoilSpringSection from './CoilSpringSection';
-import StabilizerSection from './StabilizerSection';
-import ShohinSection from './ShohinSection';
-import EngineeringSection from './EngineeringSection';
+import { useState } from "react";
+import type { Report, Project, ShohinProject, EngineeringProject } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
+import Sidebar from "./Sidebar";
+import OverviewSection from "./OverviewSection";
+import CoilSpringSection from "./CoilSpringSection";
+import StabilizerSection from "./StabilizerSection";
+import ShohinSection from "./ShohinSection";
+import EngineeringSection from "./EngineeringSection";
 
-interface DashboardClientProps {
-  report:              Report;
-  projects:            Project[];
-  shohinProjects:      ShohinProject[];
-  engineeringProjects: EngineeringProject[];
+interface Props {
+  initialReport: Report;
+  allReports: Report[];
+  initialProjects: Project[];
+  initialShohin: ShohinProject[];
+  initialEngineering: EngineeringProject[];
 }
 
-type Section = 'overview' | 'coil_spring' | 'stabilizer' | 'shohin' | 'engineering';
+export default function DashboardClient({ initialReport, allReports, initialProjects, initialShohin, initialEngineering }: Props) {
+  const [activeSection, setActiveSection] = useState("overview");
+  const [selectedReport, setSelectedReport] = useState<Report>(initialReport);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [shohinProjects, setShohinProjects] = useState<ShohinProject[]>(initialShohin);
+  const [engineeringProjects, setEngineeringProjects] = useState<EngineeringProject[]>(initialEngineering);
+  const [loadingReport, setLoadingReport] = useState(false);
 
-export default function DashboardClient({
-  report,
-  projects,
-  shohinProjects,
-  engineeringProjects,
-}: DashboardClientProps) {
-  const [section, setSection] = useState<Section>('overview');
-
-  const reportDate = new Date(report.report_date).toLocaleDateString('en-MY', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
+  async function handleReportChange(reportId: string) {
+    const report = allReports.find(r => r.id === reportId);
+    if (!report) return;
+    setLoadingReport(true);
+    setSelectedReport(report);
+    const [{ data: proj }, { data: shohin }, { data: eng }] = await Promise.all([
+      supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId),
+      supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
+      supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
+    ]);
+    setProjects(proj ?? []);
+    setShohinProjects(shohin ?? []);
+    setEngineeringProjects(eng ?? []);
+    setLoadingReport(false);
+  }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar
-        activeSection={section}
-        onNavigate={(id) => setSection(id as Section)}
-        reportLabel={report.period_label}
-        reportDate={reportDate}
-      />
-      <main className="flex-1 min-w-0 flex flex-col bg-slate-100">
-        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0 sticky top-0 z-10">
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span className="font-semibold text-slate-800">STC</span>
-            <span>›</span>
-            <span>{report.title}</span>
+    <div className="min-h-screen bg-slate-100 flex flex-col">
+      <header className="bg-blue-950 text-white px-6 py-4 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+            <span className="font-black text-white text-lg">S</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">
-              Period: <strong className="text-slate-600">{report.period_label}</strong>
-            </span>
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            <span className="text-xs text-slate-400">Live</span>
+          <div>
+            <h1 className="font-black text-lg tracking-tight">Sapura Technical Centre</h1>
+            <p className="text-blue-200 text-xs">{selectedReport.title}</p>
           </div>
-        </header>
-
-        <div className="flex-1 p-6 overflow-auto">
-          {section === 'overview' && (
-            <OverviewSection
-              projects={projects}
-              shohinProjects={shohinProjects}
-              engineeringProjects={engineeringProjects}
-              reportLabel={report.period_label}
-            />
-          )}
-          {section === 'coil_spring' && (
-            <CoilSpringSection projects={projects} />
-          )}
-          {section === 'stabilizer' && (
-            <StabilizerSection projects={projects} />
-          )}
-          {section === 'shohin' && (
-            <ShohinSection shohinProjects={shohinProjects} />
-          )}
-          {section === 'engineering' && (
-            <EngineeringSection projects={engineeringProjects} />
-          )}
         </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-blue-200 text-xs font-medium whitespace-nowrap">Report Period:</label>
+            <select
+              value={selectedReport.id}
+              onChange={e => handleReportChange(e.target.value)}
+              className="bg-blue-900 text-white text-sm rounded-lg px-3 py-1.5 border border-blue-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              {allReports.map(r => (
+                <option key={r.id} value={r.id}>{r.period_label}</option>
+              ))}
+            </select>
+          </div>
+          <a href="/admin" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition-colors">
+            Admin
+          </a>
+        </div>
+      </header>
 
-        <footer className="bg-white border-t border-slate-200 px-6 py-2 shrink-0">
-          <p className="text-xs text-slate-400 text-center">
-            Sapura Technical Centre Sdn Bhd · Together We Grow · {reportDate}
-          </p>
-        </footer>
-      </main>
+      <div className="flex flex-1">
+        <Sidebar activeSection={activeSection} onNavigate={setActiveSection} reportLabel={selectedReport.period_label} reportDate={selectedReport.report_date} />
+        <main className="flex-1 p-6 overflow-auto">
+          {loadingReport ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="w-8 h-8 border-4 border-blue-950 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-slate-500 text-sm">Loading {selectedReport.period_label}...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {activeSection === "overview" && (
+                <OverviewSection reportLabel={selectedReport.period_label} projects={projects} shohinProjects={shohinProjects} engineeringProjects={engineeringProjects} />
+              )}
+              {activeSection === "coilspring" && (
+                <CoilSpringSection projects={projects} />
+              )}
+              {activeSection === "stabilizer" && (
+                <StabilizerSection projects={projects} />
+              )}
+              {activeSection === "shohin" && (
+                <ShohinSection shohinProjects={shohinProjects} />
+              )}
+              {activeSection === "engineering" && (
+                <EngineeringSection projects={engineeringProjects} />
+              )}
+            </>
+          )}
+        </main>
+      </div>
+
+      <footer className="bg-blue-950 text-blue-300 text-xs text-center py-3">
+        Together We Grow · Sapura Technical Centre Sdn Bhd · {selectedReport.period_label}
+      </footer>
     </div>
   );
 }

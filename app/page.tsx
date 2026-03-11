@@ -1,5 +1,5 @@
+import { supabase } from './lib/supabase';
 import {
-  getLatestReport,
   getProjectsByReport,
   getShohinByReport,
   getEngineeringByReport,
@@ -8,32 +8,41 @@ import DashboardClient from './components/DashboardClient';
 
 export const revalidate = 60;
 
-export default async function HomePage() {
-  const report = await getLatestReport();
+export default async function Home() {
+  const { data: reports } = await supabase
+    .from('reports')
+    .select('*')
+    .order('report_date', { ascending: false });
 
-  if (!report) {
+  const allReports = reports ?? [];
+  const latestReport = allReports[0] ?? null;
+
+  if (!latestReport) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
         <div className="text-center">
-          <p className="text-2xl font-bold mb-2">No Reports Found</p>
-          <p className="text-slate-400">Please add a report to the database.</p>
+          <p className="text-slate-500 text-lg">No reports found.</p>
+          <a href="/admin" className="text-blue-600 text-sm hover:underline mt-2 inline-block">
+            Go to Admin to create a report
+          </a>
         </div>
       </div>
     );
   }
 
   const [projects, shohinProjects, engineeringProjects] = await Promise.all([
-    getProjectsByReport(report.id),
-    getShohinByReport(report.id),
-    getEngineeringByReport(report.id),
+    getProjectsByReport(latestReport.id),
+    getShohinByReport(latestReport.id),
+    getEngineeringByReport(latestReport.id),
   ]);
 
   return (
     <DashboardClient
-      report={report}
-      projects={projects}
-      shohinProjects={shohinProjects}
-      engineeringProjects={engineeringProjects}
+      initialReport={latestReport}
+      allReports={allReports}
+      initialProjects={projects}
+      initialShohin={shohinProjects}
+      initialEngineering={engineeringProjects}
     />
   );
 }
