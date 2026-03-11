@@ -11,7 +11,6 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ project }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [showGantt, setShowGantt] = useState(false);
   const items = project.action_items ?? [];
 
   return (
@@ -26,12 +25,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <div>
               <h3 className="font-bold text-slate-800">{project.project_name}</h3>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                {project.customer && (
-                  <span className="text-xs text-slate-500">{project.customer}</span>
-                )}
-                {project.model && (
-                  <span className="text-xs text-slate-400">· {project.model}</span>
-                )}
+                {project.customer && <span className="text-xs text-slate-500">{project.customer}</span>}
+                {project.model && <span className="text-xs text-slate-400">· {project.model}</span>}
                 {project.sop_date && (
                   <span className="text-xs text-slate-400">
                     · SOP: {new Date(project.sop_date).toLocaleDateString("en-MY", { month: "short", year: "numeric" })}
@@ -43,7 +38,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="shrink-0">
             <StatusBadge status={project.status} />
           </div>
         </div>
@@ -62,81 +57,85 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           </p>
         )}
 
-        <div className="flex items-center gap-2 mt-4">
-          {items.length > 0 && (
-            <button
-              onClick={() => { setExpanded(!expanded); setShowGantt(false); }}
-              className="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              {expanded ? "▲ Hide" : "▼ Show"} Action Items ({items.length})
-            </button>
-          )}
+        <div className="mt-4">
           <button
-            onClick={() => { setShowGantt(!showGantt); setExpanded(false); }}
-            className="text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors"
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
           >
-            {showGantt ? "▲ Hide" : "📊 Show"} Gantt Chart
+            {expanded ? "▲ Hide Details" : "▼ Show Gantt & Action Items"}
           </button>
         </div>
       </div>
 
-      {/* Action Items */}
-      {expanded && items.length > 0 && (
-        <div className="border-t border-slate-100">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
-                <th className="px-4 py-2 text-left font-semibold w-8">No</th>
-                <th className="px-4 py-2 text-left font-semibold">Category</th>
-                <th className="px-4 py-2 text-left font-semibold">Issue</th>
-                <th className="px-4 py-2 text-left font-semibold">Action Plan</th>
-                <th className="px-4 py-2 text-center font-semibold w-20">Progress</th>
-                <th className="px-4 py-2 text-center font-semibold w-24">Due Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => (
-                <tr key={item.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                  <td className="px-4 py-2 text-slate-400">{item.item_no}</td>
-                  <td className="px-4 py-2 text-slate-600 font-medium">{item.item_category}</td>
-                  <td className="px-4 py-2 text-slate-700">{item.issue_desc}</td>
-                  <td className="px-4 py-2 text-slate-600">{item.action_plan}</td>
-                  <td className="px-4 py-2 text-center">
-                    {item.is_info_only ? (
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">Info</span>
-                    ) : (
-                      <span className="font-semibold text-slate-700">{item.completion_pct}%</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-center text-slate-500">
-                    {item.due_date
-                      ? item.due_date === "Info"
-                        ? "Info"
-                        : new Date(item.due_date).toLocaleDateString("en-MY", { day: "2-digit", month: "short", year: "2-digit" })
-                      : "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Expanded: Gantt + Action Items */}
+      {expanded && (
+        <div className="border-t border-slate-200">
 
-      {/* Gantt Chart */}
-      {showGantt && (
-        <div className="border-t border-slate-100 p-4 bg-slate-50">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-              Product Design & Development — Gantt Chart
-            </p>
-            <div className="flex items-center gap-3 text-xs text-slate-500">
-              <span>Model: {project.model}</span>
-              <span>·</span>
-              <span>Customer: {project.customer}</span>
-              {project.sop_date && <span>· SOP: {new Date(project.sop_date).toLocaleDateString("en-MY", { month: "short", year: "numeric" })}</span>}
+          {/* Gantt Chart Section */}
+          <div className="p-4 bg-slate-50 border-b border-slate-200">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Product Design & Development
+              </p>
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                {project.model && <span>Model: <strong>{project.model}</strong></span>}
+                {project.customer && <span>Customer: <strong>{project.customer}</strong></span>}
+                {project.sop_date && (
+                  <span>SOP: <strong>{new Date(project.sop_date).toLocaleDateString("en-MY", { month: "short", year: "numeric" })}</strong></span>
+                )}
+                {project.volume && (
+                  <span>Volume: <strong>{project.volume.toLocaleString()}</strong></span>
+                )}
+              </div>
             </div>
+            <GanttChart projectId={project.id} />
           </div>
-          <GanttChart projectId={project.id} />
+
+          {/* Action Items Section */}
+          {items.length > 0 && (
+            <div>
+              <div className="px-4 py-2 bg-slate-100 border-b border-slate-200">
+                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Action Items</p>
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-4 py-2 text-left font-semibold w-8">No</th>
+                    <th className="px-4 py-2 text-left font-semibold w-28">Items</th>
+                    <th className="px-4 py-2 text-left font-semibold">Issue</th>
+                    <th className="px-4 py-2 text-left font-semibold">Action Plan</th>
+                    <th className="px-4 py-2 text-center font-semibold w-24">Completion</th>
+                    <th className="px-4 py-2 text-center font-semibold w-24">Due Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={item.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                      <td className="px-4 py-2.5 text-slate-400">{item.item_no}</td>
+                      <td className="px-4 py-2.5 text-slate-600 font-medium">{item.item_category}</td>
+                      <td className="px-4 py-2.5 text-slate-700">{item.issue_desc}</td>
+                      <td className="px-4 py-2.5 text-slate-600">{item.action_plan}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        {item.is_info_only ? (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">Info</span>
+                        ) : (
+                          <span className="font-semibold text-slate-700">{item.completion_pct}%</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-center text-slate-500">
+                        {item.due_date
+                          ? item.due_date === "Info"
+                            ? <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">Info</span>
+                            : new Date(item.due_date).toLocaleDateString("en-MY", { day: "2-digit", month: "short", year: "2-digit" })
+                          : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
         </div>
       )}
     </div>
