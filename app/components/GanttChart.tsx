@@ -28,7 +28,9 @@ interface GanttActivity {
 }
 
 interface Props {
-  projectId: string;
+  projectId?: string;
+  shohinProjectId?: string;
+  engineeringProjectId?: string;
 }
 
 const MONTHS = [
@@ -57,18 +59,15 @@ const CHART_START = new Date(2024, 5, 1);
 const CHART_END   = new Date(2025, 11, 31);
 const TOTAL_DAYS  = (CHART_END.getTime() - CHART_START.getTime()) / 86400000;
 
-function dayOffset(dateStr: string): number {
-  const d = new Date(dateStr);
-  return (d.getTime() - CHART_START.getTime()) / 86400000;
-}
-
 function pct(dateStr: string): number {
-  return Math.max(0, Math.min(100, (dayOffset(dateStr) / TOTAL_DAYS) * 100));
+  const d = new Date(dateStr);
+  const offset = (d.getTime() - CHART_START.getTime()) / 86400000;
+  return Math.max(0, Math.min(100, (offset / TOTAL_DAYS) * 100));
 }
 
 function barWidth(start: string, end: string): number {
-  const s = Math.max(0, dayOffset(start));
-  const e = Math.min(TOTAL_DAYS, dayOffset(end));
+  const s = Math.max(0, (new Date(start).getTime() - CHART_START.getTime()) / 86400000);
+  const e = Math.min(TOTAL_DAYS, (new Date(end).getTime() - CHART_START.getTime()) / 86400000);
   return Math.max(0.5, ((e - s) / TOTAL_DAYS) * 100);
 }
 
@@ -89,30 +88,43 @@ const BAR_COLORS: Record<string, string> = {
   postponed: "bg-red-400 border border-red-600",
 };
 
-export default function GanttChart({ projectId }: Props) {
+const year2024start = monthPct(2024, 6);
+const year2024width = monthPct(2025, 1) - monthPct(2024, 6);
+const year2025start = monthPct(2025, 1);
+const year2025width = 100 - monthPct(2025, 1);
+
+export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      let query = supabase
         .from("gantt_activities")
         .select("*, gantt_bars(*), gantt_milestones(*)")
-        .eq("project_id", projectId)
         .order("sort_order");
+
+      if (projectId) {
+        query = query.eq("project_id", projectId);
+      } else if (shohinProjectId) {
+        query = query.eq("shohin_project_id", shohinProjectId);
+      } else if (engineeringProjectId) {
+        query = query.eq("engineering_project_id", engineeringProjectId);
+      }
+
+      const { data } = await query;
       setActivities(data ?? []);
       setLoading(false);
     }
     load();
-  }, [projectId]);
+  }, [projectId, shohinProjectId, engineeringProjectId]);
 
-  if (loading) return <div className="py-6 text-center text-slate-400 text-sm">Loading Gantt chart...</div>;
-  if (activities.length === 0) return <div className="py-6 text-center text-slate-400 text-sm">No Gantt data available.</div>;
-
-  const year2024start  = monthPct(2024, 6);
-  const year2024width  = monthPct(2025, 1) - monthPct(2024, 6);
-  const year2025start  = monthPct(2025, 1);
-  const year2025width  = 100 - year2025start;
+  if (loading) return (
+    <div className="py-6 text-center text-slate-400 text-sm">Loading Gantt chart...</div>
+  );
+  if (activities.length === 0) return (
+    <div className="py-6 text-center text-slate-400 text-sm">No Gantt data available for this project.</div>
+  );
 
   return (
     <div className="overflow-x-auto">
@@ -144,7 +156,6 @@ export default function GanttChart({ projectId }: Props) {
         {/* Activity rows */}
         {activities.map((act, idx) => (
           <div key={act.id} className="relative flex" style={{ height: "36px" }}>
-            {/* Activity label */}
             <div
               className="shrink-0 flex items-center text-xs font-medium text-slate-700 bg-slate-50 border-b border-r border-slate-200 px-2"
               style={{ width: "140px" }}
@@ -152,12 +163,7 @@ export default function GanttChart({ projectId }: Props) {
               <span className="text-slate-400 mr-1">{act.activity_no}.</span>
               {act.activity_name}
             </div>
-
-            {/* Chart area */}
-            <div
-              className={"relative flex-1 border-b border-slate-100 " + (idx % 2 === 0 ? "bg-white" : "bg-slate-50")}
-            >
-              {/* Month grid lines */}
+            <div className={"relative flex-1 border-b border-slate-100 " + (idx % 2 === 0 ? "bg-white" : "bg-slate-50")}>
               {MONTHS.map((m, i) => (
                 <div
                   key={i}
@@ -165,8 +171,6 @@ export default function GanttChart({ projectId }: Props) {
                   style={{ left: monthPct(m.year, m.month) + "%", width: monthWidth(m.year, m.month) + "%" }}
                 />
               ))}
-
-              {/* Bars */}
               {act.gantt_bars.map(bar => (
                 <div
                   key={bar.id}
@@ -181,19 +185,20 @@ export default function GanttChart({ projectId }: Props) {
                   )}
                 </div>
               ))}
-
-              {/* Milestones */}
               {act.gantt_milestones.map(ms => (
                 <div
                   key={ms.id}
-                  className="absolute top-0 h-full flex flex-col items-center justify-center"
+                  className="absolute top-0 h-full flex items-center justify-center"
                   style={{ left: pct(ms.milestone_date) + "%", transform: "translateX(-50%)" }}
                   title={ms.label ?? ""}
                 >
                   {ms.shape === "star" ? (
                     <span className="text-yellow-500 text-sm leading-none">★</span>
                   ) : (
-                    <span className="text-slate-700 text-sm leading-none" style={{ transform: "rotate(45deg)", display: "inline-block", width: "10px", height: "10px", background: "#475569" }} />
+                    <span
+                      className="inline-block bg-slate-700"
+                      style={{ width: "10px", height: "10px", transform: "rotate(45deg)" }}
+                    />
                   )}
                 </div>
               ))}
@@ -221,7 +226,7 @@ export default function GanttChart({ projectId }: Props) {
             <span className="text-xs text-slate-600">Milestone (star)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span style={{ display: "inline-block", width: "10px", height: "10px", background: "#475569", transform: "rotate(45deg)" }} />
+            <span className="inline-block bg-slate-700" style={{ width: "10px", height: "10px", transform: "rotate(45deg)" }} />
             <span className="text-xs text-slate-600">Milestone (diamond)</span>
           </div>
         </div>
