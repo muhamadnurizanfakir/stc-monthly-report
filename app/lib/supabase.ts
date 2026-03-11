@@ -33,6 +33,7 @@ export interface Project {
   status:         ProjectStatus;
   summary_text:   string | null;
   mass_prod_date: string | null;
+  is_visible:     boolean;
   action_items?:  ActionItem[];
   milestones?:    Milestone[];
 }
@@ -67,6 +68,7 @@ export interface ShohinProject {
   completion_pct: number;
   status:         ProjectStatus;
   summary_text:   string | null;
+  is_visible:     boolean;
   shohin_action_items?: ShohinActionItem[];
 }
 
