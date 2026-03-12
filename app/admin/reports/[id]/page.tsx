@@ -18,11 +18,11 @@ const STATUSES = [
   { value: "completed", label: "Completed" },
 ];
 const emptyProject = { project_code: "", project_name: "", category: "coil_spring", customer: "", model: "", sop_date: "", volume: "", completion_pct: "0", status: "on_track", summary_text: "" };
-const emptyShohin = { project_name: "", customer: "", completion_pct: "0", status: "on_track", summary_text: "" };
-const emptyEng = { project_name: "", customer: "", model: "", sop_date: "", volume: "", summary_text: "", completion_pct: "0", status: "on_track" };
+const emptyShohin = { project_name: "", customer: "", category: "Material Change", completion_pct: "0", status: "on_track", summary_text: "" };
+const emptyEng = { project_name: "", customer: "", model: "", sop_date: "", volume: "", category: "Engineering", summary_text: "", completion_pct: "0", status: "on_track" };
 
-interface ShohinRow { id: string; project_name: string; customer: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; shohin_action_items?: ActionItemRow[]; }
-interface EngRow { id: string; project_name: string; customer: string | null; model: string | null; sop_date: string | null; volume: number | null; summary_text: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
+interface ShohinRow { id: string; project_name: string; customer: string | null; category: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; shohin_action_items?: ActionItemRow[]; }
+interface EngRow { id: string; project_name: string; customer: string | null; model: string | null; sop_date: string | null; volume: number | null; category: string | null; summary_text: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
 interface ActionItemRow { id: string; item_no: number | null; item_category?: string | null; issue_desc: string; action_plan: string | null; completion_pct: number; due_date: string | null; is_info_only: boolean; }
 
 type ActiveTab = "coil_spring" | "shohin" | "engineering" | "sections";
@@ -53,7 +53,7 @@ export default function ReportDetailPage() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [showSectionForm, setShowSectionForm] = useState(false);
   const [activeSectionTab, setActiveSectionTab] = useState<string | null>(null);
-  const [customForm, setCustomForm] = useState({ project_code: "", project_name: "", customer: "", completion_pct: "0", status: "on_track", summary_text: "" });
+  const [customForm, setCustomForm] = useState({ project_code: "", project_name: "", customer: "", category: "", completion_pct: "0", status: "on_track", summary_text: "" });
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
@@ -104,12 +104,12 @@ export default function ReportDetailPage() {
   // ---- Shohin CRUD ----
   function startEditShohin(s: ShohinRow) {
     setEditingShohinId(s.id); setShowForm(true);
-    setShohinForm({ project_name: s.project_name, customer: s.customer ?? "", completion_pct: s.completion_pct.toString(), status: s.status, summary_text: s.summary_text ?? "" });
+    setShohinForm({ project_name: s.project_name, customer: s.customer ?? "", category: s.category ?? "Material Change", completion_pct: s.completion_pct.toString(), status: s.status, summary_text: s.summary_text ?? "" });
   }
   async function handleSaveShohin() {
     if (!shohinForm.project_name) { alert("Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_name: shohinForm.project_name, customer: shohinForm.customer || null, completion_pct: parseInt(shohinForm.completion_pct), status: shohinForm.status, summary_text: shohinForm.summary_text || null };
+    const payload = { report_id: reportId, project_name: shohinForm.project_name, customer: shohinForm.customer || null, category: shohinForm.category || null, completion_pct: parseInt(shohinForm.completion_pct), status: shohinForm.status, summary_text: shohinForm.summary_text || null };
     if (editingShohinId) await supabase.from("shohin_projects").update(payload).eq("id", editingShohinId);
     else await supabase.from("shohin_projects").insert([payload]);
     setSuccessMsg("Saved!"); setShowForm(false); setEditingShohinId(null);
@@ -124,12 +124,12 @@ export default function ReportDetailPage() {
   // ---- Engineering CRUD ----
   function startEditEng(e: EngRow) {
     setEditingEngId(e.id); setShowForm(true);
-    setEngForm({ project_name: e.project_name, customer: e.customer ?? "", model: e.model ?? "", sop_date: e.sop_date ?? "", volume: e.volume?.toString() ?? "", summary_text: e.summary_text ?? "", completion_pct: e.completion_pct.toString(), status: e.status });
+    setEngForm({ project_name: e.project_name, customer: e.customer ?? "", model: e.model ?? "", sop_date: e.sop_date ?? "", volume: e.volume?.toString() ?? "", category: e.category ?? "Engineering", summary_text: e.summary_text ?? "", completion_pct: e.completion_pct.toString(), status: e.status });
   }
   async function handleSaveEng() {
     if (!engForm.project_name) { alert("Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_name: engForm.project_name, customer: engForm.customer || null, model: engForm.model || null, sop_date: engForm.sop_date || null, volume: engForm.volume ? parseInt(engForm.volume) : null, summary_text: engForm.summary_text || null, completion_pct: parseInt(engForm.completion_pct), status: engForm.status };
+    const payload = { report_id: reportId, project_name: engForm.project_name, customer: engForm.customer || null, model: engForm.model || null, sop_date: engForm.sop_date || null, volume: engForm.volume ? parseInt(engForm.volume) : null, category: engForm.category || null, summary_text: engForm.summary_text || null, completion_pct: parseInt(engForm.completion_pct), status: engForm.status };
     if (editingEngId) await supabase.from("engineering_projects").update(payload).eq("id", editingEngId);
     else await supabase.from("engineering_projects").insert([payload]);
     setSuccessMsg("Saved!"); setShowForm(false); setEditingEngId(null);
@@ -226,6 +226,8 @@ export default function ReportDetailPage() {
               <input type="text" value={shohinForm.project_name} onChange={e => setShohinForm({ ...shohinForm, project_name: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
               <input type="text" value={shohinForm.customer} onChange={e => setShohinForm({ ...shohinForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+              <input type="text" value={shohinForm.category} onChange={e => setShohinForm({ ...shohinForm, category: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
               <input type="number" min="0" max="100" value={shohinForm.completion_pct} onChange={e => setShohinForm({ ...shohinForm, completion_pct: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
@@ -252,6 +254,8 @@ export default function ReportDetailPage() {
               <input type="text" value={engForm.customer} onChange={e => setEngForm({ ...engForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Model</label>
               <input type="text" value={engForm.model} onChange={e => setEngForm({ ...engForm, model: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+              <input type="text" value={engForm.category} onChange={e => setEngForm({ ...engForm, category: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">SOP Date</label>
               <input type="date" value={engForm.sop_date} onChange={e => setEngForm({ ...engForm, sop_date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Summary</label>
@@ -485,7 +489,7 @@ export default function ReportDetailPage() {
                     <div className="border-t border-slate-100 bg-slate-50 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Projects in {sec.name}</p>
-                        <button onClick={() => { setEditingCustomId(null); setCustomForm({ project_code: "", project_name: "", customer: "", completion_pct: "0", status: "on_track", summary_text: "" }); setExpandedActions("custom_form_" + sec.id); }}
+                        <button onClick={() => { setEditingCustomId(null); setCustomForm({ project_code: "", project_name: "", customer: "", category: "", completion_pct: "0", status: "on_track", summary_text: "" }); setExpandedActions("custom_form_" + sec.id); }}
                           className="px-3 py-1 bg-blue-950 text-white rounded-lg text-xs font-semibold hover:bg-blue-900">+ Add Project</button>
                       </div>
 
@@ -498,6 +502,8 @@ export default function ReportDetailPage() {
                               <input type="text" value={customForm.project_name} onChange={e => setCustomForm({ ...customForm, project_name: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
                             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
                               <input type="text" value={customForm.customer} onChange={e => setCustomForm({ ...customForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                              <input type="text" value={customForm.category} onChange={e => setCustomForm({ ...customForm, category: e.target.value })} placeholder="e.g. Assembly" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
                             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
                               <input type="number" min="0" max="100" value={customForm.completion_pct} onChange={e => setCustomForm({ ...customForm, completion_pct: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
                             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
@@ -511,7 +517,7 @@ export default function ReportDetailPage() {
                             <button onClick={async () => {
                               if (!customForm.project_name) { alert("Name required"); return; }
                               setSaving(true);
-                              const payload = { section_id: sec.id, report_id: reportId, project_code: customForm.project_code || null, project_name: customForm.project_name, customer: customForm.customer || null, completion_pct: parseInt(customForm.completion_pct), status: customForm.status, summary_text: customForm.summary_text || null };
+                              const payload = { section_id: sec.id, report_id: reportId, project_code: customForm.project_code || null, project_name: customForm.project_name, customer: customForm.customer || null, category: customForm.category || null, completion_pct: parseInt(customForm.completion_pct), status: customForm.status, summary_text: customForm.summary_text || null };
                               if (editingCustomId) await supabase.from("custom_projects").update(payload).eq("id", editingCustomId);
                               else await supabase.from("custom_projects").insert([payload]);
                               setExpandedActions(null); setEditingCustomId(null); fetchData(); setSaving(false);
@@ -541,7 +547,7 @@ export default function ReportDetailPage() {
                                 <button onClick={() => setExpandedGantt(expandedGantt === p.id ? null : p.id)}
                                   className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs hover:bg-amber-100">📊</button>
                               )}
-                              <button onClick={() => { setEditingCustomId(p.id); setCustomForm({ project_code: p.project_code ?? "", project_name: p.project_name, customer: p.customer ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" }); setExpandedActions("custom_form_" + sec.id); }}
+                              <button onClick={() => { setEditingCustomId(p.id); setCustomForm({ project_code: p.project_code ?? "", project_name: p.project_name, customer: p.customer ?? "", category: (p as {category?: string|null}).category ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" }); setExpandedActions("custom_form_" + sec.id); }}
                                 className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️</button>
                               <button onClick={async () => { await supabase.from("custom_projects").update({ is_visible: !p.is_visible }).eq("id", p.id); fetchData(); }}
                                 className={"px-2 py-1 rounded text-xs font-semibold " + (p.is_visible ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200")}>

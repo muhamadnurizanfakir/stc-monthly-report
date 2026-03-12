@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { Project, ShohinProject, EngineeringProject, CustomProject } from '../lib/supabase';
+import type { Project, ShohinProject, EngineeringProject, CustomProject, Section } from '../lib/supabase';
 import { StatusBadge, ProgressBar } from './StatusBadge';
 
 interface OverviewProps {
@@ -10,6 +10,7 @@ interface OverviewProps {
   shohinProjects:      ShohinProject[];
   engineeringProjects: EngineeringProject[];
   customProjects:      CustomProject[];
+  sections:            Section[];
   reportLabel:         string;
 }
 
@@ -25,13 +26,13 @@ const CAT_LABELS: Record<string, string> = {
   engineering:    'Engineering',
 };
 
-export default function OverviewSection({ projects, shohinProjects, engineeringProjects, customProjects, reportLabel }: OverviewProps) {
+export default function OverviewSection({ projects, shohinProjects, engineeringProjects, customProjects, sections, reportLabel }: OverviewProps) {
   const stats = useMemo(() => {
     const allVisible = [
       ...projects.filter(p => p.is_visible !== false),
-      ...shohinProjects.filter(p => p.is_visible !== false),
-      ...engineeringProjects.filter(p => p.is_visible !== false),
-      ...customProjects.filter(p => p.is_visible !== false),
+      ...shohinProjects.filter(p => p.is_visible !== false).map(p => ({ ...p, project_code: '', category: p.category ?? 'Material Change' })),
+      ...engineeringProjects.filter(p => p.is_visible !== false).map(p => ({ ...p, project_code: '', category: p.category ?? 'Engineering' })),
+      ...customProjects.filter(p => p.is_visible !== false).map(p => { const sec = sections.find(s => s.id === p.section_id); return { ...p, project_code: p.project_code ?? '', category: p.category ?? sec?.name ?? 'Other' }; }),
     ];
     const total     = allVisible.length;
     const onTrack   = allVisible.filter(p => p.status === 'on_track').length;
@@ -51,7 +52,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
       }, {} as Record<string, number>)
     ).map(([name, value]) => ({ name, value }));
     return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory, allVisible };
-  }, [projects, shohinProjects, engineeringProjects, customProjects]);
+  }, [projects, shohinProjects, engineeringProjects, customProjects, sections]);
 
   const kpis = [
     { label: 'Total Projects',   value: stats.total,        sub: 'active this period',   color: '#1e3a8a' },

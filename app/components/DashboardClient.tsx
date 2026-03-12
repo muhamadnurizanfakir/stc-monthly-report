@@ -121,7 +121,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
           ) : (
             <>
               {activeSection === "overview" && (
-                <OverviewSection reportLabel={selectedReport.period_label} projects={projects} shohinProjects={shohinProjects} engineeringProjects={engineeringProjects} customProjects={customProjects} />
+                <OverviewSection reportLabel={selectedReport.period_label} projects={projects} shohinProjects={shohinProjects} engineeringProjects={engineeringProjects} customProjects={customProjects} sections={sections} />
               )}
               {activeSection === "coil_spring" && (
                 <CoilSpringSection projects={projects} onRefresh={refreshCurrentReport} />

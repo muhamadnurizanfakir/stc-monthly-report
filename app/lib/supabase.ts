@@ -65,6 +65,7 @@ export interface ShohinProject {
   report_id:      string;
   project_name:   string;
   customer:       string | null;
+  category:       string | null;
   completion_pct: number;
   status:         ProjectStatus;
   summary_text:   string | null;
@@ -94,6 +95,7 @@ export interface EngineeringProject {
   volume:         number | null;
   completion_pct: number;
   status:         ProjectStatus;
+  category:       string | null;
   summary_text:   string | null;
   engineering_action_items?: EngineeringActionItem[];
   is_visible:     boolean;
@@ -171,6 +173,7 @@ export interface CustomProject {
   sop_date:       string | null;
   completion_pct: number;
   status:         ProjectStatus;
+  category:       string | null;
   summary_text:   string | null;
   is_visible:     boolean;
   sort_order:     number;
