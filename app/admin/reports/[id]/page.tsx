@@ -543,6 +543,10 @@ export default function ReportDetailPage() {
                               )}
                               <button onClick={() => { setEditingCustomId(p.id); setCustomForm({ project_code: p.project_code ?? "", project_name: p.project_name, customer: p.customer ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" }); setExpandedActions("custom_form_" + sec.id); }}
                                 className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️</button>
+                              <button onClick={async () => { await supabase.from("custom_projects").update({ is_visible: !p.is_visible }).eq("id", p.id); fetchData(); }}
+                                className={"px-2 py-1 rounded text-xs font-semibold " + (p.is_visible ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200")}>
+                                {p.is_visible ? "👁" : "🙈"}
+                              </button>
                               <button onClick={async () => { if (!confirm("Delete " + p.project_name + "?")) return; await supabase.from("custom_projects").delete().eq("id", p.id); fetchData(); }}
                                 className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
                             </div>
