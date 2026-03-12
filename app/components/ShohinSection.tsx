@@ -22,6 +22,7 @@ export default function ShohinSection({ shohinProjects, reportId }: Props) {
 
   async function toggleVisibility(id: string, current: boolean) {
     await supabase.from("shohin_projects").update({ is_visible: !current }).eq("id", id);
+    window.location.reload();
   }
 
   return (
