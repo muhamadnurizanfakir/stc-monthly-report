@@ -31,6 +31,7 @@ interface Props {
   projectId?: string;
   shohinProjectId?: string;
   engineeringProjectId?: string;
+  reportId?: string;
   projectName: string;
 }
 
@@ -43,7 +44,7 @@ const BAR_COLORS: Record<string, string> = {
   postponed: "bg-red-100 text-red-800 border border-red-300",
 };
 
-export default function GanttEditor({ projectId, shohinProjectId, engineeringProjectId, projectName }: Props) {
+export default function GanttEditor({ projectId, shohinProjectId, engineeringProjectId, reportId, projectName }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -67,6 +68,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     if (projectId) query = query.eq("project_id", projectId);
     else if (shohinProjectId) query = query.eq("shohin_project_id", shohinProjectId);
     else if (engineeringProjectId) query = query.eq("engineering_project_id", engineeringProjectId);
+    else if (reportId) query = query.eq("report_id", reportId);
     const { data } = await query;
     setActivities(data ?? []);
     setLoading(false);
@@ -157,6 +159,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     if (projectId) payload.project_id = projectId;
     else if (shohinProjectId) payload.shohin_project_id = shohinProjectId;
     else if (engineeringProjectId) payload.engineering_project_id = engineeringProjectId;
+    else if (reportId) payload.report_id = reportId;
     await supabase.from("gantt_activities").insert([payload]);
     fetchActivities();
   }

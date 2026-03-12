@@ -291,6 +291,32 @@ export default function ReportDetailPage() {
             </div>
           ))}
 
+          {/* Shohin Master Gantt */}
+          {activeTab === "shohin" && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-amber-600 flex items-center justify-center shrink-0">
+                    <span className="text-white font-bold text-xs">G</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">Material Change — Master Gantt Chart</p>
+                    <p className="text-xs text-slate-400">Shared Gantt chart for all material change projects</p>
+                  </div>
+                </div>
+                <button onClick={() => setExpandedGantt(expandedGantt === "shohin-master" ? null : "shohin-master")}
+                  className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold hover:bg-amber-100">
+                  {expandedGantt === "shohin-master" ? "▲ Hide Gantt" : "📊 Edit Master Gantt"}
+                </button>
+              </div>
+              {expandedGantt === "shohin-master" && (
+                <div className="border-t border-slate-100 p-4 bg-purple-50">
+                  <GanttEditor reportId={reportId} projectName="Material Change Master Gantt" />
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Shohin Tab */}
           {activeTab === "shohin" && shohinProjects.map(s => (
             <div key={s.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
