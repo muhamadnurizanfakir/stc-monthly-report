@@ -41,7 +41,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
     setLoadingReport(true);
     setSelectedReport(report);
     const [{ data: proj }, { data: shohin }, { data: eng }] = await Promise.all([
-      supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId),
+      supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
     ]);
