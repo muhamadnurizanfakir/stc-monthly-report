@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import type { Project } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { StatusBadge, ProgressBar } from "./StatusBadge";
 import GanttChart from "./GanttChart";
 
 interface ProjectCardProps {
   project: Project;
+  onRefresh?: () => void;
 }
 
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
+  const [visible, setVisible] = useState(project.is_visible !== false);
   const [expanded, setExpanded] = useState(false);
   const items = project.action_items ?? [];
 
@@ -57,7 +60,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           </p>
         )}
 
-        <div className="mt-4">
+        <div className="mt-4 flex items-center gap-2">
+          <button onClick={async () => { const nv = !visible; setVisible(nv); await supabase.from("projects").update({ is_visible: nv }).eq("id", project.id); if (onRefresh) await onRefresh(); }}
+            className={"text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors " + (visible ? "text-green-700 bg-green-50 hover:bg-green-100" : "text-slate-500 bg-slate-100 hover:bg-slate-200")}>
+            {visible ? "👁 Visible" : "🙈 Hidden"}
+          </button>
           <button
             onClick={() => setExpanded(!expanded)}
             className="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Project } from "../lib/supabase";
 import ProjectCard from "./ProjectCard";
 
-export default function StabilizerSection({ projects }: { projects: Project[] }) {
+export default function StabilizerSection({ projects, onRefresh }: { projects: Project[]; onRefresh?: () => void }) {
   const [showHidden, setShowHidden] = useState(false);
   const stabProjects = projects.filter(p => p.category === "stabilizer_bar");
   const visibleProjects = stabProjects.filter(p => p.is_visible !== false);
@@ -37,7 +37,7 @@ export default function StabilizerSection({ projects }: { projects: Project[] })
       ) : (
         <div className="space-y-4">
           {displayProjects.map(p => (
-            <ProjectCard key={p.id} project={p} />
+            <ProjectCard key={p.id} project={p} onRefresh={onRefresh} />
           ))}
         </div>
       )}

@@ -2,13 +2,14 @@
 
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { Project, ShohinProject, EngineeringProject } from '../lib/supabase';
+import type { Project, ShohinProject, EngineeringProject, CustomProject } from '../lib/supabase';
 import { StatusBadge, ProgressBar } from './StatusBadge';
 
 interface OverviewProps {
   projects:            Project[];
   shohinProjects:      ShohinProject[];
   engineeringProjects: EngineeringProject[];
+  customProjects:      CustomProject[];
   reportLabel:         string;
 }
 
@@ -24,9 +25,9 @@ const CAT_LABELS: Record<string, string> = {
   engineering:    'Engineering',
 };
 
-export default function OverviewSection({ projects, shohinProjects, engineeringProjects, reportLabel }: OverviewProps) {
+export default function OverviewSection({ projects, shohinProjects, engineeringProjects, customProjects, reportLabel }: OverviewProps) {
   const stats = useMemo(() => {
-    const total     = projects.length + shohinProjects.length + engineeringProjects.length;
+    const total     = projects.length + shohinProjects.length + engineeringProjects.length + customProjects.length;
     const onTrack   = projects.filter(p => p.status === 'on_track').length;
     const completed = projects.filter(p => p.completion_pct === 100).length;
     const delayed   = projects.filter(p => p.status === 'delayed').length;
@@ -46,7 +47,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
     ).map(([name, value]) => ({ name, value }));
 
     return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory };
-  }, [projects, shohinProjects, engineeringProjects]);
+  }, [projects, shohinProjects, engineeringProjects, customProjects]);
 
   const kpis = [
     { label: 'Total Projects',   value: stats.total,        sub: 'active this period',   color: '#1e3a8a' },
