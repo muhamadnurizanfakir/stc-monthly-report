@@ -1,6 +1,5 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 
 interface GanttMilestone {
@@ -9,7 +8,6 @@ interface GanttMilestone {
   shape: string;
   label: string | null;
 }
-
 interface GanttBar {
   id: string;
   bar_type: string;
@@ -17,7 +15,6 @@ interface GanttBar {
   end_date: string;
   label: string | null;
 }
-
 interface GanttActivity {
   id: string;
   activity_no: number;
@@ -26,7 +23,6 @@ interface GanttActivity {
   gantt_bars: GanttBar[];
   gantt_milestones: GanttMilestone[];
 }
-
 interface Props {
   projectId?: string;
   shohinProjectId?: string;
@@ -34,65 +30,40 @@ interface Props {
   reportId?: string;
 }
 
-const MONTHS = [
-  { year: 2024, month: 6,  label: "Jun" },
-  { year: 2024, month: 7,  label: "Jul" },
-  { year: 2024, month: 8,  label: "Aug" },
-  { year: 2024, month: 9,  label: "Sep" },
-  { year: 2024, month: 10, label: "Oct" },
-  { year: 2024, month: 11, label: "Nov" },
-  { year: 2024, month: 12, label: "Dec" },
-  { year: 2025, month: 1,  label: "Jan" },
-  { year: 2025, month: 2,  label: "Feb" },
-  { year: 2025, month: 3,  label: "Mar" },
-  { year: 2025, month: 4,  label: "Apr" },
-  { year: 2025, month: 5,  label: "May" },
-  { year: 2025, month: 6,  label: "Jun" },
-  { year: 2025, month: 7,  label: "Jul" },
-  { year: 2025, month: 8,  label: "Aug" },
-  { year: 2025, month: 9,  label: "Sept" },
-  { year: 2025, month: 10, label: "Oct" },
-  { year: 2025, month: 11, label: "Nov" },
-  { year: 2025, month: 12, label: "Dec" },
-];
-
-const CHART_START = new Date(2024, 5, 1);
-const CHART_END   = new Date(2025, 11, 31);
-const TOTAL_DAYS  = (CHART_END.getTime() - CHART_START.getTime()) / 86400000;
-
-function pct(dateStr: string): number {
-  const d = new Date(dateStr);
-  const offset = (d.getTime() - CHART_START.getTime()) / 86400000;
-  return Math.max(0, Math.min(100, (offset / TOTAL_DAYS) * 100));
-}
-
-function barWidth(start: string, end: string): number {
-  const s = Math.max(0, (new Date(start).getTime() - CHART_START.getTime()) / 86400000);
-  const e = Math.min(TOTAL_DAYS, (new Date(end).getTime() - CHART_START.getTime()) / 86400000);
-  return Math.max(0.5, ((e - s) / TOTAL_DAYS) * 100);
-}
-
-function monthPct(year: number, month: number): number {
-  const d = new Date(year, month - 1, 1);
-  return ((d.getTime() - CHART_START.getTime()) / 86400000 / TOTAL_DAYS) * 100;
-}
-
-function monthWidth(year: number, month: number): number {
-  const start = new Date(year, month - 1, 1);
-  const end   = new Date(year, month, 0);
-  return (((end.getTime() - start.getTime()) / 86400000 + 1) / TOTAL_DAYS) * 100;
-}
-
+const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const BAR_COLORS: Record<string, string> = {
-  plan:      "bg-green-300 border border-green-500",
-  actual:    "bg-blue-300 border border-blue-500",
-  postponed: "bg-red-400 border border-red-600",
+  plan:      "#1e3a8a",
+  actual:    "#16a34a",
+  postponed: "#dc2626",
 };
 
-const year2024start = monthPct(2024, 6);
-const year2024width = monthPct(2025, 1) - monthPct(2024, 6);
-const year2025start = monthPct(2025, 1);
-const year2025width = 100 - monthPct(2025, 1);
+function buildRange(activities: GanttActivity[]) {
+  const allDates: number[] = [];
+  for (const act of activities) {
+    for (const bar of act.gantt_bars ?? []) {
+      if (bar.start_date) allDates.push(new Date(bar.start_date).getTime());
+      if (bar.end_date)   allDates.push(new Date(bar.end_date).getTime());
+    }
+    for (const ms of act.gantt_milestones ?? []) {
+      if (ms.milestone_date) allDates.push(new Date(ms.milestone_date).getTime());
+    }
+  }
+  const now = new Date();
+  const defStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const defEnd   = new Date(now.getFullYear(), now.getMonth() + 11, 1);
+  const minD = allDates.length > 0 ? new Date(Math.min(...allDates)) : defStart;
+  const maxD = allDates.length > 0 ? new Date(Math.max(...allDates)) : defEnd;
+  const start = new Date(minD.getFullYear(), minD.getMonth() - 1, 1);
+  const end   = new Date(maxD.getFullYear(), maxD.getMonth() + 1,  1);
+  const months: { year: number; month: number; label: string }[] = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    months.push({ year: cur.getFullYear(), month: cur.getMonth() + 1, label: MONTH_LABELS[cur.getMonth()] });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  const totalDays = (end.getTime() - start.getTime()) / 86400000 || 1;
+  return { months, start, end, totalDays };
+}
 
 export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
@@ -104,17 +75,10 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
         .from("gantt_activities")
         .select("*, gantt_bars(*), gantt_milestones(*)")
         .order("sort_order");
-
-      if (projectId) {
-        query = query.eq("project_id", projectId);
-      } else if (shohinProjectId) {
-        query = query.eq("shohin_project_id", shohinProjectId);
-      } else if (engineeringProjectId) {
-        query = query.eq("engineering_project_id", engineeringProjectId);
-      } else if (reportId) {
-        query = query.eq("report_id", reportId);
-      }
-
+      if (projectId) query = query.eq("project_id", projectId);
+      else if (shohinProjectId) query = query.eq("shohin_project_id", shohinProjectId);
+      else if (engineeringProjectId) query = query.eq("engineering_project_id", engineeringProjectId);
+      else if (reportId) query = query.eq("report_id", reportId);
       const { data } = await query;
       setActivities(data ?? []);
       setLoading(false);
@@ -122,118 +86,95 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
     load();
   }, [projectId, shohinProjectId, engineeringProjectId, reportId]);
 
-  if (loading) return (
-    <div className="py-6 text-center text-slate-400 text-sm">Loading Gantt chart...</div>
-  );
-  if (activities.length === 0) return (
-    <div className="py-6 text-center text-slate-400 text-sm">No Gantt data available for this project.</div>
-  );
+  const { months, start, totalDays } = useMemo(() => buildRange(activities), [activities]);
+
+  function pct(dateStr: string) {
+    const offset = (new Date(dateStr).getTime() - start.getTime()) / 86400000;
+    return Math.max(0, Math.min(100, (offset / totalDays) * 100));
+  }
+  function bWidth(s: string, e: string) {
+    const sd = Math.max(0, (new Date(s).getTime() - start.getTime()) / 86400000);
+    const ed = Math.min(totalDays, (new Date(e).getTime() - start.getTime()) / 86400000);
+    return Math.max(0.5, ((ed - sd) / totalDays) * 100);
+  }
+
+  if (loading) return <div className="text-xs text-slate-400 py-4 text-center">Loading Gantt...</div>;
+  if (activities.length === 0) return <div className="text-xs text-slate-400 py-4 text-center">No Gantt data yet. Add activities in Admin.</div>;
+
+  const ROW_H = 28;
+  const LABEL_W = 140;
+  const chartH = activities.length * ROW_H + 40;
 
   return (
-    <div className="overflow-x-auto">
-      <div style={{ minWidth: "1100px" }}>
-
+    <div className="overflow-x-auto rounded border border-slate-200 bg-white">
+      <div style={{ minWidth: 600 }}>
         {/* Year header */}
-        <div className="relative h-6 bg-slate-200 border border-slate-300" style={{ marginLeft: "140px" }}>
-          <div
-            className="absolute top-0 h-full bg-slate-600 flex items-center justify-center text-white text-xs font-bold border-r border-slate-400"
-            style={{ left: year2024start + "%", width: year2024width + "%" }}
-          >2024</div>
-          <div
-            className="absolute top-0 h-full bg-slate-700 flex items-center justify-center text-white text-xs font-bold"
-            style={{ left: year2025start + "%", width: year2025width + "%" }}
-          >2025</div>
-        </div>
-
-        {/* Month header */}
-        <div className="relative h-6 bg-slate-100 border-b border-slate-300" style={{ marginLeft: "140px" }}>
-          {MONTHS.map((m, i) => (
-            <div
-              key={i}
-              className="absolute top-0 h-full flex items-center justify-center text-xs font-semibold text-slate-700 border-r border-slate-200"
-              style={{ left: monthPct(m.year, m.month) + "%", width: monthWidth(m.year, m.month) + "%" }}
-            >{m.label}</div>
+        <div className="flex" style={{ marginLeft: LABEL_W }}>
+          {Object.entries(
+            months.reduce((acc, m) => { acc[m.year] = (acc[m.year] ?? 0) + 1; return acc; }, {} as Record<number, number>)
+          ).map(([year, count]) => (
+            <div key={year} style={{ flex: count }} className="text-center text-xs font-bold text-white bg-blue-950 py-1 border-r border-blue-800">
+              {year}
+            </div>
           ))}
         </div>
-
+        {/* Month header */}
+        <div className="flex border-b border-slate-200" style={{ marginLeft: LABEL_W }}>
+          {months.map((m, i) => (
+            <div key={i} style={{ flex: 1 }} className="text-center text-xs text-slate-500 py-1 border-r border-slate-100 font-medium">
+              {m.label}
+            </div>
+          ))}
+        </div>
         {/* Activity rows */}
-        {activities.map((act, idx) => (
-          <div key={act.id} className="relative flex" style={{ height: "36px" }}>
-            <div
-              className="shrink-0 flex items-center text-xs font-medium text-slate-700 bg-slate-50 border-b border-r border-slate-200 px-2"
-              style={{ width: "140px" }}
-            >
-              <span className="text-slate-400 mr-1">{act.activity_no}.</span>
-              {act.activity_name}
-            </div>
-            <div className={"relative flex-1 border-b border-slate-100 " + (idx % 2 === 0 ? "bg-white" : "bg-slate-50")}>
-              {MONTHS.map((m, i) => (
-                <div
-                  key={i}
-                  className="absolute top-0 h-full border-r border-slate-100"
-                  style={{ left: monthPct(m.year, m.month) + "%", width: monthWidth(m.year, m.month) + "%" }}
-                />
-              ))}
-              {act.gantt_bars.map(bar => (
-                <div
-                  key={bar.id}
-                  className={"absolute top-2 h-5 rounded flex items-center justify-center overflow-hidden " + BAR_COLORS[bar.bar_type]}
-                  style={{ left: pct(bar.start_date) + "%", width: barWidth(bar.start_date, bar.end_date) + "%" }}
-                  title={bar.label ?? bar.bar_type}
-                >
-                  {bar.label && (
-                    <span className="text-xs font-semibold text-slate-800 whitespace-nowrap px-1 truncate">
-                      {bar.label}
-                    </span>
-                  )}
-                </div>
-              ))}
-              {act.gantt_milestones.map(ms => (
-                <div
-                  key={ms.id}
-                  className="absolute top-0 h-full flex items-center justify-center"
-                  style={{ left: pct(ms.milestone_date) + "%", transform: "translateX(-50%)" }}
-                  title={ms.label ?? ""}
-                >
-                  {ms.shape === "star" ? (
-                    <span className="text-yellow-500 text-sm leading-none">★</span>
-                  ) : (
-                    <span
-                      className="inline-block bg-slate-700"
-                      style={{ width: "10px", height: "10px", transform: "rotate(45deg)" }}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+        <div style={{ height: chartH, position: "relative" }}>
+          {/* Column grid */}
+          <div className="absolute inset-0 flex pointer-events-none" style={{ marginLeft: LABEL_W }}>
+            {months.map((m, i) => (
+              <div key={i} style={{ flex: 1 }} className="border-r border-slate-100 h-full" />
+            ))}
           </div>
-        ))}
-
-        {/* Legend */}
-        <div className="flex items-center gap-6 mt-3 px-2" style={{ marginLeft: "140px" }}>
-          <span className="text-xs font-semibold text-slate-500">Legend:</span>
-          <div className="flex items-center gap-1.5">
-            <div className="w-8 h-3 bg-green-300 border border-green-500 rounded" />
-            <span className="text-xs text-slate-600">Plan</span>
+          {/* Row labels */}
+          <div className="absolute top-0 left-0 bottom-0" style={{ width: LABEL_W }}>
+            {activities.map((act, i) => (
+              <div key={act.id} style={{ height: ROW_H, top: i * ROW_H, position: "absolute", width: LABEL_W }}
+                className="flex items-center px-2 border-b border-slate-50">
+                <span className="text-xs text-slate-600 truncate">{act.activity_name}</span>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-8 h-3 bg-blue-300 border border-blue-500 rounded" />
-            <span className="text-xs text-slate-600">Actual</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-8 h-3 bg-red-400 border border-red-600 rounded" />
-            <span className="text-xs text-slate-600">Postponed</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-yellow-500">★</span>
-            <span className="text-xs text-slate-600">Milestone (star)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block bg-slate-700" style={{ width: "10px", height: "10px", transform: "rotate(45deg)" }} />
-            <span className="text-xs text-slate-600">Milestone (diamond)</span>
+          {/* Bars & milestones */}
+          <div className="absolute top-0 bottom-0" style={{ left: LABEL_W, right: 0 }}>
+            {activities.map((act, i) => (
+              <div key={act.id} style={{ height: ROW_H, top: i * ROW_H, position: "absolute", width: "100%" }}
+                className="border-b border-slate-50">
+                {act.gantt_bars.map(bar => (
+                  <div key={bar.id} title={bar.label ?? bar.bar_type}
+                    style={{ left: pct(bar.start_date) + "%", width: bWidth(bar.start_date, bar.end_date) + "%", top: "25%", height: "50%", position: "absolute", background: BAR_COLORS[bar.bar_type] ?? "#64748b", borderRadius: 3, opacity: 0.85 }}>
+                    {bar.label && <span className="text-white text-xs px-1 truncate leading-none" style={{ fontSize: 9 }}>{bar.label}</span>}
+                  </div>
+                ))}
+                {act.gantt_milestones.map(ms => (
+                  <div key={ms.id} title={ms.label ?? ms.shape}
+                    style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", fontSize: 14, lineHeight: 1 }}>
+                    {ms.shape === "star" ? "★" : "◆"}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
-
+        {/* Legend */}
+        <div className="flex gap-4 px-3 py-2 border-t border-slate-100 bg-slate-50">
+          {Object.entries(BAR_COLORS).map(([type, color]) => (
+            <div key={type} className="flex items-center gap-1">
+              <div style={{ width: 16, height: 8, background: color, borderRadius: 2 }} />
+              <span className="text-xs text-slate-500 capitalize">{type}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1"><span style={{ fontSize: 12 }}>★</span><span className="text-xs text-slate-500">Milestone</span></div>
+          <div className="flex items-center gap-1"><span style={{ fontSize: 12 }}>◆</span><span className="text-xs text-slate-500">Event</span></div>
+        </div>
       </div>
     </div>
   );
