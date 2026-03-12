@@ -138,7 +138,12 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
               </tr>
             </thead>
             <tbody>
-              {projects.map((p, i) => (
+              {[...projects].sort((a, b) => {
+                const order: Record<string, number> = { coil_spring: 0, stabilizer_bar: 1, engineering: 2 };
+                const catDiff = (order[a.category] ?? 3) - (order[b.category] ?? 3);
+                if (catDiff !== 0) return catDiff;
+                return a.project_code.localeCompare(b.project_code);
+              }).map((p, i) => (
                 <tr key={p.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                   <td className="py-2 px-4 text-slate-400 font-mono">{p.project_code}</td>
                   <td className="py-2 px-4 font-medium text-slate-700">{p.project_name}</td>
