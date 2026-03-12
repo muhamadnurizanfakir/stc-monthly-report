@@ -51,6 +51,7 @@ export default function ReportDetailPage() {
   const [customProjects, setCustomProjects] = useState<{ id: string; section_id: string; project_code: string | null; project_name: string; customer: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; custom_action_items?: {id:string;item_no:number|null;issue_desc:string;action_plan:string|null;completion_pct:number;due_date:string|null;is_info_only:boolean}[] }[]>([]);
   const [sectionForm, setSectionForm] = useState({ name: "", icon: "📁", color: "#0f172a", display_mode: "individual", sort_order: "0" });
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [showSectionForm, setShowSectionForm] = useState(false);
   const [activeSectionTab, setActiveSectionTab] = useState<string | null>(null);
   const [customForm, setCustomForm] = useState({ project_code: "", project_name: "", customer: "", completion_pct: "0", status: "on_track", summary_text: "" });
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
@@ -157,9 +158,12 @@ export default function ReportDetailPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Manage Projects</h1>
         </div>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setEditingShohinId(null); setEditingEngId(null); setForm(emptyProject); setShohinForm(emptyShohin); setEngForm(emptyEng); }}
+        <button onClick={() => {
+          if (activeTab === "sections") { setShowSectionForm(true); setEditingSectionId(null); setSectionForm({ name: "", icon: "📁", color: "#0f172a", display_mode: "individual", sort_order: sections.length.toString() }); }
+          else { setShowForm(true); setEditingId(null); setEditingShohinId(null); setEditingEngId(null); setForm(emptyProject); setShohinForm(emptyShohin); setEngForm(emptyEng); }
+        }}
           className="px-4 py-2 bg-blue-950 text-white rounded-lg text-sm font-semibold hover:bg-blue-900">
-          + Add Project
+          {activeTab === "sections" ? "+ Add Section" : "+ Add Project"}
         </button>
       </div>
 
@@ -402,7 +406,7 @@ export default function ReportDetailPage() {
           {activeTab === "sections" && (
             <div className="space-y-4">
               {/* Add/Edit Section Form */}
-              {showForm && (
+              {showSectionForm && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                   <h2 className="font-bold text-slate-800 mb-4">{editingSectionId ? "Edit Section" : "Add New Section"}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -427,12 +431,12 @@ export default function ReportDetailPage() {
                       const payload = { report_id: reportId, name: sectionForm.name, icon: sectionForm.icon, color: sectionForm.color, display_mode: sectionForm.display_mode, sort_order: parseInt(sectionForm.sort_order) };
                       if (editingSectionId) await supabase.from("sections").update(payload).eq("id", editingSectionId);
                       else await supabase.from("sections").insert([payload]);
-                      setSuccessMsg("Section saved!"); setShowForm(false); setEditingSectionId(null);
+                      setSuccessMsg("Section saved!"); setShowSectionForm(false); setEditingSectionId(null);
                       fetchData(); setTimeout(() => setSuccessMsg(""), 3000); setSaving(false);
                     }} disabled={saving} className="px-4 py-2 bg-blue-950 text-white rounded-lg text-sm font-semibold hover:bg-blue-900 disabled:opacity-50">
                       {saving ? "Saving..." : editingSectionId ? "Update" : "Add Section"}
                     </button>
-                    <button onClick={() => { setShowForm(false); setEditingSectionId(null); }} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancel</button>
+                    <button onClick={() => { setShowSectionForm(false); setEditingSectionId(null); }} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancel</button>
                   </div>
                 </div>
               )}
@@ -464,7 +468,7 @@ export default function ReportDetailPage() {
                           {expandedGantt === "sec_" + sec.id ? "▲ Hide Gantt" : "📊 Master Gantt"}
                         </button>
                       )}
-                      <button onClick={() => { setEditingSectionId(sec.id); setSectionForm({ name: sec.name, icon: sec.icon, color: sec.color, display_mode: sec.display_mode, sort_order: sec.sort_order.toString() }); setShowForm(true); }}
+                      <button onClick={() => { setEditingSectionId(sec.id); setSectionForm({ name: sec.name, icon: sec.icon, color: sec.color, display_mode: sec.display_mode, sort_order: sec.sort_order.toString() }); setShowSectionForm(true); }}
                         className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100">✏️ Edit</button>
                       <button onClick={async () => { if (!confirm("Delete section " + sec.name + " and all its projects?")) return; await supabase.from("sections").delete().eq("id", sec.id); fetchData(); }}
                         className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100">🗑️</button>
