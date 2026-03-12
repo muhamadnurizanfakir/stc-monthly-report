@@ -19,10 +19,10 @@ const STATUSES = [
 ];
 const emptyProject = { project_code: "", project_name: "", category: "coil_spring", customer: "", model: "", sop_date: "", volume: "", completion_pct: "0", status: "on_track", summary_text: "" };
 const emptyShohin = { project_name: "", customer: "", completion_pct: "0", status: "on_track", summary_text: "" };
-const emptyEng = { project_code: "", project_name: "", description: "", completion_pct: "0", status: "on_track" };
+const emptyEng = { project_name: "", customer: "", model: "", sop_date: "", volume: "", summary_text: "", completion_pct: "0", status: "on_track" };
 
 interface ShohinRow { id: string; project_name: string; customer: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; shohin_action_items?: ActionItemRow[]; }
-interface EngRow { id: string; project_code: string; project_name: string; description: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
+interface EngRow { id: string; project_name: string; customer: string | null; model: string | null; sop_date: string | null; volume: number | null; summary_text: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
 interface ActionItemRow { id: string; item_no: number | null; item_category?: string | null; issue_desc: string; action_plan: string | null; completion_pct: number; due_date: string | null; is_info_only: boolean; }
 
 type ActiveTab = "coil_spring" | "shohin" | "engineering";
@@ -112,12 +112,12 @@ export default function ReportDetailPage() {
   // ---- Engineering CRUD ----
   function startEditEng(e: EngRow) {
     setEditingEngId(e.id); setShowForm(true);
-    setEngForm({ project_code: e.project_code, project_name: e.project_name, description: e.description ?? "", completion_pct: e.completion_pct.toString(), status: e.status });
+    setEngForm({ project_name: e.project_name, customer: e.customer ?? "", model: e.model ?? "", sop_date: e.sop_date ?? "", volume: e.volume?.toString() ?? "", summary_text: e.summary_text ?? "", completion_pct: e.completion_pct.toString(), status: e.status });
   }
   async function handleSaveEng() {
     if (!engForm.project_name) { alert("Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_code: engForm.project_code, project_name: engForm.project_name, description: engForm.description || null, completion_pct: parseInt(engForm.completion_pct), status: engForm.status };
+    const payload = { report_id: reportId, project_name: engForm.project_name, customer: engForm.customer || null, model: engForm.model || null, sop_date: engForm.sop_date || null, volume: engForm.volume ? parseInt(engForm.volume) : null, summary_text: engForm.summary_text || null, completion_pct: parseInt(engForm.completion_pct), status: engForm.status };
     if (editingEngId) await supabase.from("engineering_projects").update(payload).eq("id", editingEngId);
     else await supabase.from("engineering_projects").insert([payload]);
     setSuccessMsg("Saved!"); setShowForm(false); setEditingEngId(null);
@@ -231,12 +231,16 @@ export default function ReportDetailPage() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h2 className="font-bold text-slate-800 mb-4">{editingEngId ? "Edit Engineering Project" : "Add Engineering Project"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Code</label>
-              <input type="text" value={engForm.project_code} onChange={e => setEngForm({ ...engForm, project_code: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Name *</label>
+            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Name *</label>
               <input type="text" value={engForm.project_name} onChange={e => setEngForm({ ...engForm, project_name: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Description</label>
-              <textarea value={engForm.description} onChange={e => setEngForm({ ...engForm, description: e.target.value })} rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
+              <input type="text" value={engForm.customer} onChange={e => setEngForm({ ...engForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Model</label>
+              <input type="text" value={engForm.model} onChange={e => setEngForm({ ...engForm, model: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">SOP Date</label>
+              <input type="date" value={engForm.sop_date} onChange={e => setEngForm({ ...engForm, sop_date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Summary</label>
+              <textarea value={engForm.summary_text} onChange={e => setEngForm({ ...engForm, summary_text: e.target.value })} rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
               <input type="number" min="0" max="100" value={engForm.completion_pct} onChange={e => setEngForm({ ...engForm, completion_pct: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
@@ -353,11 +357,11 @@ export default function ReportDetailPage() {
               <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-teal-700 flex items-center justify-center shrink-0">
-                    <span className="text-white font-bold text-xs">{e.project_code || "E"}</span>
+                    <span className="text-white font-bold text-xs">E</span>
                   </div>
                   <div>
                     <p className="font-semibold text-slate-800">{e.project_name}</p>
-                    <p className="text-xs text-slate-400">{e.description} · {e.completion_pct}% complete</p>
+                    <p className="text-xs text-slate-400">{e.customer ?? "Engineering"} · {e.completion_pct}% complete</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

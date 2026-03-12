@@ -164,8 +164,9 @@ export default function AdminPage() {
 
     for (const e of engProjects ?? []) {
       const { data: newEng } = await supabase.from("engineering_projects").insert([{
-        report_id: destId, project_code: e.project_code, project_name: e.project_name,
-        description: e.description, completion_pct: e.completion_pct,
+        report_id: destId, project_name: e.project_name,
+        customer: e.customer, model: e.model, sop_date: e.sop_date, volume: e.volume,
+        summary_text: e.summary_text, completion_pct: e.completion_pct,
         status: e.status, is_visible: e.is_visible,
       }]).select().single();
 
