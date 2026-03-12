@@ -5,7 +5,7 @@ import { StatusBadge, ProgressBar } from "./StatusBadge";
 import GanttChart from "./GanttChart";
 import { supabase } from "../lib/supabase";
 
-function EngineeringCard({ project }: { project: EngineeringProject }) {
+function EngineeringCard({ project, onRefresh }: { project: EngineeringProject; onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(project.is_visible !== false);
   const items = project.engineering_action_items ?? [];
@@ -14,7 +14,7 @@ function EngineeringCard({ project }: { project: EngineeringProject }) {
     const newVal = !visible;
     setVisible(newVal);
     await supabase.from("engineering_projects").update({ is_visible: newVal }).eq("id", project.id);
-    window.location.reload();
+    await onRefresh();
   }
 
   return (
@@ -95,7 +95,7 @@ function EngineeringCard({ project }: { project: EngineeringProject }) {
   );
 }
 
-export default function EngineeringSection({ projects }: { projects: EngineeringProject[] }) {
+export default function EngineeringSection({ projects, onRefresh }: { projects: EngineeringProject[]; onRefresh: () => void }) {
   const [showHidden, setShowHidden] = useState(false);
   const visibleProjects = projects.filter(p => p.is_visible !== false);
   const hiddenProjects = projects.filter(p => p.is_visible === false);
@@ -121,7 +121,7 @@ export default function EngineeringSection({ projects }: { projects: Engineering
         <div className="bg-white rounded-xl border border-slate-200 px-6 py-10 text-center text-slate-400 text-sm">No engineering projects for this period.</div>
       ) : (
         <div className="space-y-4">
-          {displayProjects.map(p => <EngineeringCard key={p.id} project={p} />)}
+          {displayProjects.map(p => <EngineeringCard key={p.id} project={p} onRefresh={onRefresh} />)}
         </div>
       )}
     </div>

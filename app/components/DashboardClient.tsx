@@ -41,6 +41,22 @@ export default function DashboardClient({ initialReport, allReports, initialProj
     refreshReports();
   }, []);
 
+  async function refreshCurrentReport() {
+    const reportId = selectedReport.id;
+    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
+      supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId).order("project_code"),
+      supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
+      supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
+      supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
+      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
+    ]);
+    if (proj)  setProjects(proj);
+    if (shohin) setShohinProjects(shohin);
+    if (eng)   setEngineeringProjects(eng);
+    if (sec)   setSections(sec);
+    if (cust)  setCustomProjects(cust);
+  }
+
   async function handleReportChange(reportId: string) {
     const report = allReports.find(r => r.id === reportId);
     if (!report) return;
@@ -114,7 +130,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
                 <StabilizerSection projects={projects} />
               )}
               {activeSection === "shohin" && (
-                <ShohinSection shohinProjects={shohinProjects} reportId={selectedReport.id} />
+                <ShohinSection shohinProjects={shohinProjects} reportId={selectedReport.id} onRefresh={refreshCurrentReport} />
               )}
               {sections.map(sec => (
                 activeSection === "section_" + sec.id && (
@@ -122,11 +138,12 @@ export default function DashboardClient({ initialReport, allReports, initialProj
                     key={sec.id}
                     section={sec}
                     projects={customProjects.filter(p => p.section_id === sec.id)}
+                    onRefresh={refreshCurrentReport}
                   />
                 )
               ))}
               {activeSection === "engineering" && (
-                <EngineeringSection projects={engineeringProjects} />
+                <EngineeringSection projects={engineeringProjects} onRefresh={refreshCurrentReport} />
               )}
             </>
           )}

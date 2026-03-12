@@ -5,7 +5,7 @@ import { StatusBadge, ProgressBar } from "./StatusBadge";
 import GanttChart from "./GanttChart";
 import { supabase } from "../lib/supabase";
 
-function IndividualCard({ project, sectionColor }: { project: CustomProject; sectionColor: string }) {
+function IndividualCard({ project, sectionColor, onRefresh }: { project: CustomProject; sectionColor: string; onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(project.is_visible !== false);
   const items = project.custom_action_items ?? [];
@@ -13,7 +13,7 @@ function IndividualCard({ project, sectionColor }: { project: CustomProject; sec
     const newVal = !visible;
     setVisible(newVal);
     await supabase.from("custom_projects").update({ is_visible: newVal }).eq("id", project.id);
-    window.location.reload();
+    await onRefresh();
   }
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-4">
@@ -90,7 +90,7 @@ function IndividualCard({ project, sectionColor }: { project: CustomProject; sec
   );
 }
 
-function CombinedCard({ section, projects }: { section: Section; projects: CustomProject[] }) {
+function CombinedCard({ section, projects, onRefresh }: { section: Section; projects: CustomProject[]; onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const visible = projects.filter(p => p.is_visible !== false);
@@ -100,7 +100,7 @@ function CombinedCard({ section, projects }: { section: Section; projects: Custo
   const overallPct = display.length > 0 ? Math.round(display.reduce((s, p) => s + p.completion_pct, 0) / display.length) : 0;
   async function toggleVisibility(id: string, current: boolean) {
     await supabase.from("custom_projects").update({ is_visible: !current }).eq("id", id);
-    window.location.reload();
+    await onRefresh();
   }
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -194,7 +194,7 @@ function CombinedCard({ section, projects }: { section: Section; projects: Custo
   );
 }
 
-export default function CustomSection({ section, projects }: { section: Section; projects: CustomProject[] }) {
+export default function CustomSection({ section, projects, onRefresh }: { section: Section; projects: CustomProject[]; onRefresh: () => void }) {
   const [showHidden, setShowHidden] = useState(false);
   const visible = projects.filter(p => p.is_visible !== false);
   const hidden = projects.filter(p => p.is_visible === false);
@@ -221,10 +221,10 @@ export default function CustomSection({ section, projects }: { section: Section;
           No projects for this section yet.
         </div>
       ) : section.display_mode === "combined" ? (
-        <CombinedCard section={section} projects={display} />
+        <CombinedCard section={section} projects={display} onRefresh={onRefresh} />
       ) : (
         <div className="space-y-4">
-          {display.map(p => <IndividualCard key={p.id} project={p} sectionColor={section.color} />)}
+          {display.map(p => <IndividualCard key={p.id} project={p} sectionColor={section.color} onRefresh={onRefresh} />)}
         </div>
       )}
     </div>
