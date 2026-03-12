@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [copyFrom, setCopyFrom] = useState("");
+  const [editingReportId, setEditingReportId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "Functions Reporting & Presentation",
     report_date: "",
@@ -201,6 +202,31 @@ export default function AdminPage() {
     }
   }
 
+  function startEditReport(report: Report) {
+    setEditingReportId(report.id);
+    setForm({ title: report.title ?? "Functions Reporting & Presentation", report_date: report.report_date, period_label: report.period_label, created_by: report.created_by ?? "STC Engineering", notes: report.notes ?? "" });
+    setShowForm(true);
+    setCopyFrom("");
+  }
+
+  async function handleSaveReport() {
+    if (!form.report_date || !form.period_label) { alert("Date and Period Label required"); return; }
+    setSaving(true);
+    if (editingReportId) {
+      await supabase.from("reports").update({ title: form.title, report_date: form.report_date, period_label: form.period_label, created_by: form.created_by, notes: form.notes }).eq("id", editingReportId);
+    } else {
+      await handleCreate();
+      setSaving(false);
+      return;
+    }
+    setSuccessMsg("Report updated!");
+    setShowForm(false);
+    setEditingReportId(null);
+    fetchReports();
+    setTimeout(() => setSuccessMsg(""), 3000);
+    setSaving(false);
+  }
+
   async function handleDelete(id: string, label: string) {
     if (!confirm("Delete report " + label + "? This deletes ALL projects inside!")) return;
     await supabase.from("reports").delete().eq("id", id);
@@ -277,9 +303,9 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <button onClick={handleCreate} disabled={saving}
+            <button onClick={editingReportId ? handleSaveReport : handleCreate} disabled={saving}
               className="px-4 py-2 bg-blue-950 text-white rounded-lg text-sm font-semibold hover:bg-blue-900 disabled:opacity-50">
-              {saving ? "Copying data, please wait..." : "Create Report"}
+              {saving ? "Saving..." : editingReportId ? "Update Report" : "Create Report"}
             </button>
             <button onClick={() => { setShowForm(false); setCopyFrom(""); }}
               className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">
@@ -315,6 +341,8 @@ export default function AdminPage() {
                     className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100">
                     Manage Projects
                   </a>
+                  <button onClick={() => startEditReport(report)}
+                    className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100">✏️ Edit</button>
                   <button onClick={() => handleDelete(report.id, report.period_label)}
                     className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100">
                     Delete
