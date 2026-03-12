@@ -27,26 +27,30 @@ const CAT_LABELS: Record<string, string> = {
 
 export default function OverviewSection({ projects, shohinProjects, engineeringProjects, customProjects, reportLabel }: OverviewProps) {
   const stats = useMemo(() => {
-    const total     = projects.length + shohinProjects.length + engineeringProjects.length + customProjects.length;
-    const onTrack   = projects.filter(p => p.status === 'on_track').length;
-    const completed = projects.filter(p => p.completion_pct === 100).length;
-    const delayed   = projects.filter(p => p.status === 'delayed').length;
-    const avgPct    = Math.round(projects.reduce((s, p) => s + p.completion_pct, 0) / (projects.length || 1));
-
+    const allVisible = [
+      ...projects.filter(p => p.is_visible !== false),
+      ...shohinProjects.filter(p => p.is_visible !== false),
+      ...engineeringProjects.filter(p => p.is_visible !== false),
+      ...customProjects.filter(p => p.is_visible !== false),
+    ];
+    const total     = allVisible.length;
+    const onTrack   = allVisible.filter(p => p.status === 'on_track').length;
+    const completed = allVisible.filter(p => p.completion_pct === 100).length;
+    const delayed   = allVisible.filter(p => p.status === 'delayed' || p.status === 'at_risk').length;
+    const avgPct    = Math.round(allVisible.reduce((s, p) => s + p.completion_pct, 0) / (allVisible.length || 1));
     const statusDist = [
       { name: 'On Track',  value: onTrack,   color: '#16a34a' },
       { name: 'Completed', value: completed,  color: '#2563eb' },
       { name: 'Delayed',   value: delayed,    color: '#dc2626' },
     ].filter(d => d.value > 0);
-
     const byCategory = Object.entries(
-      projects.reduce((acc, p) => {
-        acc[p.category] = (acc[p.category] ?? 0) + 1;
+      allVisible.reduce((acc, p) => {
+        const cat = (p as {category?: string}).category ?? 'other';
+        acc[cat] = (acc[cat] ?? 0) + 1;
         return acc;
       }, {} as Record<string, number>)
     ).map(([name, value]) => ({ name, value }));
-
-    return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory };
+    return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory, allVisible };
   }, [projects, shohinProjects, engineeringProjects, customProjects]);
 
   const kpis = [
@@ -99,8 +103,8 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
           <h3 className="font-bold text-slate-700 mb-4">Customer Mix</h3>
           <div className="space-y-3 mt-2">
             {Object.entries(
-              projects.reduce((acc, p) => {
-                const c = p.customer ?? 'Unknown';
+              stats.allVisible.reduce((acc, p) => {
+                const c = (p as {customer?: string|null}).customer ?? 'Unknown';
                 acc[c] = (acc[c] ?? 0) + 1;
                 return acc;
               }, {} as Record<string, number>)
@@ -110,7 +114,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                 <div className="flex-1 bg-slate-100 rounded-full h-2">
                   <div
                     className="h-2 rounded-full"
-                    style={{ width: `${(count / projects.length) * 100}%`, background: '#1e3a8a' }}
+                    style={{ width: `${(count / stats.allVisible.length) * 100}%`, background: '#1e3a8a' }}
                   />
                 </div>
                 <span className="w-4 text-slate-600 font-semibold shrink-0">{count}</span>
@@ -123,7 +127,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-bold text-slate-700">All Projects Summary</h3>
-          <span className="text-xs text-slate-400">{projects.length} projects</span>
+          <span className="text-xs text-slate-400">{stats.allVisible.length} projects</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
@@ -139,31 +143,38 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
               </tr>
             </thead>
             <tbody>
-              {[...projects].sort((a, b) => {
+              {[...stats.allVisible].sort((a, b) => {
                 const order: Record<string, number> = { coil_spring: 0, stabilizer_bar: 1, engineering: 2 };
-                const catDiff = (order[a.category] ?? 3) - (order[b.category] ?? 3);
+                const ac = (a as {category?: string}).category ?? 'zzz';
+                const bc = (b as {category?: string}).category ?? 'zzz';
+                const catDiff = (order[ac] ?? 3) - (order[bc] ?? 3);
                 if (catDiff !== 0) return catDiff;
-                return a.project_code.localeCompare(b.project_code);
-              }).map((p, i) => (
+                const acode = (a as {project_code?: string}).project_code ?? '';
+                const bcode = (b as {project_code?: string}).project_code ?? '';
+                return acode.localeCompare(bcode);
+              }).map((p, i) => {
+                const cat = (p as {category?: string}).category ?? 'other';
+                const code = (p as {project_code?: string}).project_code ?? '';
+                return (
                 <tr key={p.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                  <td className="py-2 px-4 text-slate-400 font-mono">{p.project_code}</td>
+                  <td className="py-2 px-4 text-slate-400 font-mono">{code}</td>
                   <td className="py-2 px-4 font-medium text-slate-700">{p.project_name}</td>
                   <td className="py-2 px-4">
                     <span className="px-2 py-0.5 rounded text-xs font-semibold"
-                      style={{ background: CAT_COLORS[p.category] + '18', color: CAT_COLORS[p.category] }}>
-                      {CAT_LABELS[p.category]}
+                      style={{ background: (CAT_COLORS[cat] ?? '#64748b') + '18', color: CAT_COLORS[cat] ?? '#64748b' }}>
+                      {CAT_LABELS[cat] ?? cat}
                     </span>
                   </td>
-                  <td className="py-2 px-4 text-slate-500">{p.customer ?? '—'}</td>
+                  <td className="py-2 px-4 text-slate-500">{(p as {customer?: string|null}).customer ?? '—'}</td>
                   <td className="py-2 px-4 text-slate-500 font-mono whitespace-nowrap">
-                    {p.sop_date ? new Date(p.sop_date).toLocaleDateString('en-MY', { month: 'short', year: '2-digit' }) : '—'}
+                    {(p as {sop_date?: string|null}).sop_date ? new Date((p as {sop_date?: string|null}).sop_date!).toLocaleDateString('en-MY', { month: 'short', year: '2-digit' }) : '—'}
                   </td>
                   <td className="py-2 px-4 w-36">
                     <ProgressBar pct={p.completion_pct} />
                   </td>
                   <td className="py-2 px-4"><StatusBadge status={p.status} /></td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
