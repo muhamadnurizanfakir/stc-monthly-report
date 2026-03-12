@@ -1,127 +1,127 @@
-'use client';
+"use client";
+import { useState } from "react";
+import type { EngineeringProject } from "../lib/supabase";
+import { StatusBadge, ProgressBar } from "./StatusBadge";
+import GanttChart from "./GanttChart";
+import { supabase } from "../lib/supabase";
 
-import { useState } from 'react';
-import clsx from 'clsx';
-import type { EngineeringProject } from '../lib/supabase';
-import { StatusBadge, ProgressBar, CompletionDot } from './StatusBadge';
+function EngineeringCard({ project }: { project: EngineeringProject }) {
+  const [expanded, setExpanded] = useState(false);
+  const [visible, setVisible] = useState(project.is_visible !== false);
+  const items = project.engineering_action_items ?? [];
 
-export default function EngineeringSection({ projects }: { projects: EngineeringProject[] }) {
+  async function toggleVisibility() {
+    const newVal = !visible;
+    setVisible(newVal);
+    await supabase.from("engineering_projects").update({ is_visible: newVal }).eq("id", project.id);
+    window.location.reload();
+  }
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="w-1 h-8 bg-purple-600 rounded-full" />
-        <div>
-          <h2 className="font-bold text-2xl text-slate-800">Engineering Projects</h2>
-          <p className="text-slate-500 text-xs">{projects.length} engineering project{projects.length !== 1 ? 's' : ''}</p>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-4">
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-teal-700 flex items-center justify-center shrink-0">
+              <span className="text-white font-bold text-xs">E</span>
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800">{project.project_name}</h3>
+              {project.summary_text && <p className="text-xs text-slate-500 mt-0.5">{project.summary_text}</p>}
+            </div>
+          </div>
+          <StatusBadge status={project.status} />
+        </div>
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-slate-500 font-medium">Overall Progress</span>
+            <span className="text-xs font-bold text-slate-700">{project.completion_pct}%</span>
+          </div>
+          <ProgressBar pct={project.completion_pct} />
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <button onClick={toggleVisibility}
+            className={"text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors " + (visible ? "text-green-700 bg-green-50 hover:bg-green-100" : "text-slate-500 bg-slate-100 hover:bg-slate-200")}>
+            {visible ? "👁 Visible" : "🙈 Hidden"}
+          </button>
+          <button onClick={() => setExpanded(!expanded)}
+            className="text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors">
+            {expanded ? "▲ Hide Details" : "▼ Show Gantt & Action Items"}
+          </button>
         </div>
       </div>
-      {projects.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 px-6 py-10 text-center text-slate-400 text-sm">
-          No engineering projects for this period.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {projects.map((p, i) => (
-            <EngCard key={p.id} project={p} index={i} />
-          ))}
+      {expanded && (
+        <div className="border-t border-slate-200">
+          <div className="p-4 bg-slate-50 border-b border-slate-200">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Product Design & Development</p>
+            <GanttChart engineeringProjectId={project.id} />
+          </div>
+          {items.length > 0 && (
+            <div>
+              <div className="px-4 py-2 bg-slate-100 border-b border-slate-200">
+                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Action Items</p>
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-4 py-2 text-left font-semibold w-8">No</th>
+                    <th className="px-4 py-2 text-left font-semibold">Issue</th>
+                    <th className="px-4 py-2 text-left font-semibold">Action Plan</th>
+                    <th className="px-4 py-2 text-center font-semibold w-24">Completion</th>
+                    <th className="px-4 py-2 text-center font-semibold w-24">Due Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={item.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                      <td className="px-4 py-2.5 text-slate-400">{item.item_no}</td>
+                      <td className="px-4 py-2.5 text-slate-700">{item.issue_desc}</td>
+                      <td className="px-4 py-2.5 text-slate-600">{item.action_plan}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        {item.is_info_only ? <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded">Info</span> : <span className="font-semibold text-slate-700">{item.completion_pct}%</span>}
+                      </td>
+                      <td className="px-4 py-2.5 text-center text-slate-500">
+                        {item.due_date ? new Date(item.due_date).toLocaleDateString("en-MY", { day: "2-digit", month: "short", year: "2-digit" }) : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function EngCard({ project, index }: { project: EngineeringProject; index: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const items = project.engineering_action_items ?? [];
-
+export default function EngineeringSection({ projects }: { projects: EngineeringProject[] }) {
+  const [showHidden, setShowHidden] = useState(false);
+  const visibleProjects = projects.filter(p => p.is_visible !== false);
+  const hiddenProjects = projects.filter(p => p.is_visible === false);
+  const displayProjects = showHidden ? projects : visibleProjects;
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div
-        className="px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
-        onClick={() => setExpanded(e => !e)}
-      >
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center shrink-0">
-            <span className="text-white font-bold text-sm">{String(index + 1).padStart(2, '0')}</span>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-8 bg-teal-700 rounded-full" />
+          <div>
+            <h2 className="font-bold text-2xl text-slate-800">Engineering</h2>
+            <p className="text-slate-500 text-xs">{visibleProjects.length} active projects</p>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-bold text-slate-800 text-base">{project.project_name}</h3>
-              <StatusBadge status={project.status} />
-            </div>
-            <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-500">
-              {project.customer && <span>👤 {project.customer}</span>}
-              {project.model    && <span>🔖 {project.model}</span>}
-              {project.volume   && <span>📦 {project.volume.toLocaleString()} units/month</span>}
-            </div>
-            <div className="mt-2 w-48">
-              <ProgressBar pct={project.completion_pct} color="#7c3aed" />
-            </div>
-          </div>
-          <span className={clsx('text-slate-400 text-xs mt-1 transition-transform duration-200', expanded && 'rotate-180')}>
-            ▼
-          </span>
         </div>
-        {project.summary_text && (
-          <p className="mt-2 ml-14 text-xs text-slate-500 italic">{project.summary_text}</p>
+        {hiddenProjects.length > 0 && (
+          <button onClick={() => setShowHidden(!showHidden)}
+            className="text-xs font-semibold px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+            {showHidden ? "Hide completed" : "Show " + hiddenProjects.length + " hidden project" + (hiddenProjects.length > 1 ? "s" : "")}
+          </button>
         )}
       </div>
-
-      {expanded && (
-        <div className="border-t border-slate-100">
-          {items.length > 0 ? (
-            <>
-              <div className="px-5 py-2 bg-slate-50">
-                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Action Items</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="text-left py-2 px-3 font-semibold text-slate-500 w-8">#</th>
-                      <th className="text-left py-2 px-3 font-semibold text-slate-500 w-36">Category</th>
-                      <th className="text-left py-2 px-3 font-semibold text-slate-500">Issue</th>
-                      <th className="text-left py-2 px-3 font-semibold text-slate-500">Action Plan</th>
-                      <th className="text-left py-2 px-3 font-semibold text-slate-500 w-24">Progress</th>
-                      <th className="text-left py-2 px-3 font-semibold text-slate-500 w-24">Due Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, i) => (
-                      <tr key={item.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                        <td className="py-2 px-3 text-slate-400 font-mono">{item.item_no ?? '—'}</td>
-                        <td className="py-2 px-3">
-                          {item.item_category && (
-                            <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-xs font-medium whitespace-nowrap">
-                              {item.item_category}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3">
-                          <div className="flex gap-1.5">
-                            <CompletionDot pct={item.completion_pct} />
-                            <span className="text-slate-700">{item.issue_desc}</span>
-                          </div>
-                        </td>
-                        <td className="py-2 px-3 text-slate-500">{item.action_plan ?? '—'}</td>
-                        <td className="py-2 px-3">
-                          <ProgressBar pct={item.completion_pct} color="#7c3aed" />
-                        </td>
-                        <td className="py-2 px-3 font-mono text-slate-500 whitespace-nowrap">
-                          {item.due_date
-                            ? new Date(item.due_date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: '2-digit' })
-                            : '—'
-                          }
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : (
-            <div className="px-5 py-4 text-xs text-slate-400 text-center">No action items.</div>
-          )}
+      {displayProjects.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 px-6 py-10 text-center text-slate-400 text-sm">No engineering projects for this period.</div>
+      ) : (
+        <div className="space-y-4">
+          {displayProjects.map(p => <EngineeringCard key={p.id} project={p} />)}
         </div>
       )}
     </div>

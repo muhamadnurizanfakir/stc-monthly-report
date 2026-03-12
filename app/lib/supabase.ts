@@ -96,6 +96,7 @@ export interface EngineeringProject {
   status:         ProjectStatus;
   summary_text:   string | null;
   engineering_action_items?: EngineeringActionItem[];
+  is_visible:     boolean;
 }
 
 export interface EngineeringActionItem {
