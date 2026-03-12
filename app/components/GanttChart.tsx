@@ -28,6 +28,8 @@ interface Props {
   shohinProjectId?: string;
   engineeringProjectId?: string;
   reportId?: string;
+  customProjectId?: string;
+  sectionId?: string;
 }
 
 const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -65,7 +67,7 @@ function buildRange(activities: GanttActivity[]) {
   return { months, start, end, totalDays };
 }
 
-export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId }: Props) {
+export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -79,12 +81,14 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
       else if (shohinProjectId) query = query.eq("shohin_project_id", shohinProjectId);
       else if (engineeringProjectId) query = query.eq("engineering_project_id", engineeringProjectId);
       else if (reportId) query = query.eq("report_id", reportId);
+      else if (customProjectId) query = query.eq("custom_project_id", customProjectId);
+      else if (sectionId) query = query.eq("section_id", sectionId);
       const { data } = await query;
       setActivities(data ?? []);
       setLoading(false);
     }
     load();
-  }, [projectId, shohinProjectId, engineeringProjectId, reportId]);
+  }, [projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId]);
 
   const { months, start, totalDays } = useMemo(() => buildRange(activities), [activities]);
 

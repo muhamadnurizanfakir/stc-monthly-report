@@ -3,6 +3,8 @@ import {
   getProjectsByReport,
   getShohinByReport,
   getEngineeringByReport,
+  getSectionsByReport,
+  getCustomProjectsByReport,
 } from './lib/supabase';
 import DashboardClient from './components/DashboardClient';
 
@@ -30,10 +32,12 @@ export default async function Home() {
     );
   }
 
-  const [projects, shohinProjects, engineeringProjects] = await Promise.all([
+  const [projects, shohinProjects, engineeringProjects, sections, customProjects] = await Promise.all([
     getProjectsByReport(latestReport.id),
     getShohinByReport(latestReport.id),
     getEngineeringByReport(latestReport.id),
+    getSectionsByReport(latestReport.id),
+    getCustomProjectsByReport(latestReport.id),
   ]);
 
   return (
@@ -42,6 +46,8 @@ export default async function Home() {
       allReports={allReports}
       initialProjects={projects}
       initialShohin={shohinProjects}
+      initialSections={sections}
+      initialCustomProjects={customProjects}
       initialEngineering={engineeringProjects}
     />
   );

@@ -149,3 +149,72 @@ export async function getEngineeringByReport(reportId: string): Promise<Engineer
   if (error) { console.error(error); return []; }
   return data ?? [];
 }
+
+export interface Section {
+  id:           string;
+  report_id:    string;
+  name:         string;
+  icon:         string;
+  color:        string;
+  display_mode: 'individual' | 'combined';
+  sort_order:   number;
+}
+
+export interface CustomProject {
+  id:             string;
+  section_id:     string;
+  report_id:      string;
+  project_code:   string | null;
+  project_name:   string;
+  customer:       string | null;
+  model:          string | null;
+  sop_date:       string | null;
+  completion_pct: number;
+  status:         ProjectStatus;
+  summary_text:   string | null;
+  is_visible:     boolean;
+  sort_order:     number;
+  custom_action_items?: CustomActionItem[];
+}
+
+export interface CustomActionItem {
+  id:               string;
+  custom_project_id: string;
+  item_no:          number | null;
+  item_category:    string | null;
+  issue_desc:       string;
+  action_plan:      string | null;
+  completion_pct:   number;
+  due_date:         string | null;
+  is_info_only:     boolean;
+}
+
+export async function getSectionsByReport(reportId: string): Promise<Section[]> {
+  const { data, error } = await supabase
+    .from('sections')
+    .select('*')
+    .eq('report_id', reportId)
+    .order('sort_order');
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
+export async function getCustomProjectsBySection(sectionId: string): Promise<CustomProject[]> {
+  const { data, error } = await supabase
+    .from('custom_projects')
+    .select('*, custom_action_items(*)')
+    .eq('section_id', sectionId)
+    .order('sort_order');
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
+export async function getCustomProjectsByReport(reportId: string): Promise<CustomProject[]> {
+  const { data, error } = await supabase
+    .from('custom_projects')
+    .select('*, custom_action_items(*)')
+    .eq('report_id', reportId)
+    .order('sort_order');
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}

@@ -10,6 +10,7 @@ interface NavItem {
 }
 
 interface SidebarProps {
+  sections?: { id: string; name: string; icon: string }[];
   activeSection: string;
   onNavigate:    (id: string) => void;
   reportLabel:   string;
@@ -24,7 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'engineering', label: 'Engineering',      icon: '⊕' },
 ];
 
-export default function Sidebar({ activeSection, onNavigate, reportLabel, reportDate }: SidebarProps) {
+export default function Sidebar({ activeSection, onNavigate, reportLabel, reportDate, sections = [] }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -63,7 +64,7 @@ export default function Sidebar({ activeSection, onNavigate, reportLabel, report
       )}
 
       <nav className="flex-1 px-2 py-3 space-y-0.5">
-        {NAV_ITEMS.map(item => (
+        {[...NAV_ITEMS, ...sections.map(s => ({ id: "section_" + s.id, label: s.name, icon: s.icon }))].map(item => (
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}

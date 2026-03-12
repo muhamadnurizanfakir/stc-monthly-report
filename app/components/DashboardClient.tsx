@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import type { Report, Project, ShohinProject, EngineeringProject } from "../lib/supabase";
 import { supabase } from "../lib/supabase";
+import type { Section, CustomProject } from "../lib/supabase";
+import CustomSection from "./CustomSection";
 import Sidebar from "./Sidebar";
 import OverviewSection from "./OverviewSection";
 import CoilSpringSection from "./CoilSpringSection";
@@ -15,16 +17,20 @@ interface Props {
   allReports: Report[];
   initialProjects: Project[];
   initialShohin: ShohinProject[];
+  initialSections: Section[];
+  initialCustomProjects: CustomProject[];
   initialEngineering: EngineeringProject[];
 }
 
-export default function DashboardClient({ initialReport, allReports, initialProjects, initialShohin, initialEngineering }: Props) {
+export default function DashboardClient({ initialReport, allReports, initialProjects, initialShohin, initialEngineering, initialSections, initialCustomProjects }: Props) {
   const [activeSection, setActiveSection] = useState("overview");
   const [selectedReport, setSelectedReport] = useState<Report>(initialReport);
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [shohinProjects, setShohinProjects] = useState<ShohinProject[]>(initialShohin);
   const [engineeringProjects, setEngineeringProjects] = useState<EngineeringProject[]>(initialEngineering);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [sections, setSections] = useState<Section[]>(initialSections);
+  const [customProjects, setCustomProjects] = useState<CustomProject[]>(initialCustomProjects);
   const [reportList, setReportList] = useState<Report[]>(allReports);
 
   useEffect(() => {
@@ -40,14 +46,18 @@ export default function DashboardClient({ initialReport, allReports, initialProj
     if (!report) return;
     setLoadingReport(true);
     setSelectedReport(report);
-    const [{ data: proj }, { data: shohin }, { data: eng }] = await Promise.all([
+    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
+      supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
+      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
     ]);
     setProjects(proj ?? []);
     setShohinProjects(shohin ?? []);
     setEngineeringProjects(eng ?? []);
+    setSections(sec ?? []);
+    setCustomProjects(cust ?? []);
     setLoadingReport(false);
   }
 
@@ -83,7 +93,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
       </header>
 
       <div className="flex flex-1">
-        <Sidebar activeSection={activeSection} onNavigate={setActiveSection} reportLabel={selectedReport.period_label} reportDate={selectedReport.report_date} />
+        <Sidebar activeSection={activeSection} onNavigate={setActiveSection} reportLabel={selectedReport.period_label} reportDate={selectedReport.report_date} sections={sections} />
         <main className="flex-1 p-6 overflow-auto">
           {loadingReport ? (
             <div className="flex items-center justify-center h-64">
@@ -106,6 +116,15 @@ export default function DashboardClient({ initialReport, allReports, initialProj
               {activeSection === "shohin" && (
                 <ShohinSection shohinProjects={shohinProjects} reportId={selectedReport.id} />
               )}
+              {sections.map(sec => (
+                activeSection === "section_" + sec.id && (
+                  <CustomSection
+                    key={sec.id}
+                    section={sec}
+                    projects={customProjects.filter(p => p.section_id === sec.id)}
+                  />
+                )
+              ))}
               {activeSection === "engineering" && (
                 <EngineeringSection projects={engineeringProjects} />
               )}

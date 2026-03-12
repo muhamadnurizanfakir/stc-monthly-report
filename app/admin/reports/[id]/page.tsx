@@ -25,7 +25,7 @@ interface ShohinRow { id: string; project_name: string; customer: string | null;
 interface EngRow { id: string; project_name: string; customer: string | null; model: string | null; sop_date: string | null; volume: number | null; summary_text: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
 interface ActionItemRow { id: string; item_no: number | null; item_category?: string | null; issue_desc: string; action_plan: string | null; completion_pct: number; due_date: string | null; is_info_only: boolean; }
 
-type ActiveTab = "coil_spring" | "shohin" | "engineering";
+type ActiveTab = "coil_spring" | "shohin" | "engineering" | "sections";
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -47,6 +47,13 @@ export default function ReportDetailPage() {
   const [editingEngId, setEditingEngId] = useState<string | null>(null);
   const [expandedActions, setExpandedActions] = useState<string | null>(null);
   const [expandedGantt, setExpandedGantt] = useState<string | null>(null);
+  const [sections, setSections] = useState<{ id: string; name: string; icon: string; color: string; display_mode: string; sort_order: number }[]>([]);
+  const [customProjects, setCustomProjects] = useState<{ id: string; section_id: string; project_code: string | null; project_name: string; customer: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; custom_action_items?: {id:string;item_no:number|null;issue_desc:string;action_plan:string|null;completion_pct:number;due_date:string|null;is_info_only:boolean}[] }[]>([]);
+  const [sectionForm, setSectionForm] = useState({ name: "", icon: "📁", color: "#0f172a", display_mode: "individual", sort_order: "0" });
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [activeSectionTab, setActiveSectionTab] = useState<string | null>(null);
+  const [customForm, setCustomForm] = useState({ project_code: "", project_name: "", customer: "", completion_pct: "0", status: "on_track", summary_text: "" });
+  const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -54,10 +61,12 @@ export default function ReportDetailPage() {
     setLoading(true);
     const { data: report } = await supabase.from("reports").select("period_label").eq("id", reportId).single();
     if (report) setReportLabel(report.period_label);
-    const [{ data: proj }, { data: shohin }, { data: eng }] = await Promise.all([
+    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
+      supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
+      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
     ]);
     const sorted = (proj ?? []).sort((a, b) => {
       const catDiff = (CAT_ORDER[a.category] ?? 3) - (CAT_ORDER[b.category] ?? 3);
@@ -66,6 +75,8 @@ export default function ReportDetailPage() {
     setProjects(sorted);
     setShohinProjects(shohin ?? []);
     setEngProjects(eng ?? []);
+    setSections(sec ?? []);
+    setCustomProjects(cust ?? []);
     setLoading(false);
   }
 
@@ -158,7 +169,7 @@ export default function ReportDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200">
-        {([["coil_spring", "Coil Spring & Stabilizer", tabCounts.coil_spring], ["shohin", "Material Change", tabCounts.shohin], ["engineering", "Engineering", tabCounts.engineering]] as [ActiveTab, string, number][]).map(([id, label, count]) => (
+        {([["coil_spring", "Coil Spring & Stabilizer", tabCounts.coil_spring], ["shohin", "Material Change", tabCounts.shohin], ["engineering", "Engineering", tabCounts.engineering], ["sections", "Custom Sections", sections.length]] as [ActiveTab, string, number][]).map(([id, label, count]) => (
           <button key={id} onClick={() => { setActiveTab(id); setShowForm(false); }}
             className={"px-4 py-2 text-sm font-semibold border-b-2 transition-colors " + (activeTab === id ? "border-blue-950 text-blue-950" : "border-transparent text-slate-500 hover:text-slate-700")}>
             {label} <span className="ml-1 px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">{count}</span>
@@ -386,6 +397,162 @@ export default function ReportDetailPage() {
             </div>
           ))}
 
+
+          {/* Sections Tab */}
+          {activeTab === "sections" && (
+            <div className="space-y-4">
+              {/* Add/Edit Section Form */}
+              {showForm && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                  <h2 className="font-bold text-slate-800 mb-4">{editingSectionId ? "Edit Section" : "Add New Section"}</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Section Name *</label>
+                      <input type="text" value={sectionForm.name} onChange={e => setSectionForm({ ...sectionForm, name: e.target.value })} placeholder="e.g. Assembly, Machining Parts, FEA" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                    <div><label className="block text-xs font-semibold text-slate-600 mb-1">Icon (emoji)</label>
+                      <input type="text" value={sectionForm.icon} onChange={e => setSectionForm({ ...sectionForm, icon: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                    <div><label className="block text-xs font-semibold text-slate-600 mb-1">Color</label>
+                      <input type="color" value={sectionForm.color} onChange={e => setSectionForm({ ...sectionForm, color: e.target.value })} className="w-full h-10 border border-slate-200 rounded-lg px-1 py-1 focus:outline-none" /></div>
+                    <div><label className="block text-xs font-semibold text-slate-600 mb-1">Display Mode</label>
+                      <select value={sectionForm.display_mode} onChange={e => setSectionForm({ ...sectionForm, display_mode: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="individual">Individual (separate cards per project)</option>
+                        <option value="combined">Combined (one card, shared Gantt)</option>
+                      </select></div>
+                    <div><label className="block text-xs font-semibold text-slate-600 mb-1">Sort Order</label>
+                      <input type="number" value={sectionForm.sort_order} onChange={e => setSectionForm({ ...sectionForm, sort_order: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                  </div>
+                  <div className="flex gap-3 mt-4">
+                    <button onClick={async () => {
+                      if (!sectionForm.name) { alert("Name required"); return; }
+                      setSaving(true);
+                      const payload = { report_id: reportId, name: sectionForm.name, icon: sectionForm.icon, color: sectionForm.color, display_mode: sectionForm.display_mode, sort_order: parseInt(sectionForm.sort_order) };
+                      if (editingSectionId) await supabase.from("sections").update(payload).eq("id", editingSectionId);
+                      else await supabase.from("sections").insert([payload]);
+                      setSuccessMsg("Section saved!"); setShowForm(false); setEditingSectionId(null);
+                      fetchData(); setTimeout(() => setSuccessMsg(""), 3000); setSaving(false);
+                    }} disabled={saving} className="px-4 py-2 bg-blue-950 text-white rounded-lg text-sm font-semibold hover:bg-blue-900 disabled:opacity-50">
+                      {saving ? "Saving..." : editingSectionId ? "Update" : "Add Section"}
+                    </button>
+                    <button onClick={() => { setShowForm(false); setEditingSectionId(null); }} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {sections.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400">
+                  No custom sections yet. Click <strong>+ Add Project</strong> to create one.
+                </div>
+              ) : sections.map(sec => (
+                <div key={sec.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-lg" style={{ background: sec.color + "20" }}>
+                        {sec.icon}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800">{sec.name}</p>
+                        <p className="text-xs text-slate-400">{sec.display_mode} · {customProjects.filter(p => p.section_id === sec.id).length} projects</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setActiveSectionTab(activeSectionTab === sec.id ? null : sec.id)}
+                        className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold hover:bg-purple-100">
+                        {activeSectionTab === sec.id ? "▲ Hide Projects" : "▼ Manage Projects"}
+                      </button>
+                      {sec.display_mode === "combined" && (
+                        <button onClick={() => setExpandedGantt(expandedGantt === "sec_" + sec.id ? null : "sec_" + sec.id)}
+                          className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold hover:bg-amber-100">
+                          {expandedGantt === "sec_" + sec.id ? "▲ Hide Gantt" : "📊 Master Gantt"}
+                        </button>
+                      )}
+                      <button onClick={() => { setEditingSectionId(sec.id); setSectionForm({ name: sec.name, icon: sec.icon, color: sec.color, display_mode: sec.display_mode, sort_order: sec.sort_order.toString() }); setShowForm(true); }}
+                        className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100">✏️ Edit</button>
+                      <button onClick={async () => { if (!confirm("Delete section " + sec.name + " and all its projects?")) return; await supabase.from("sections").delete().eq("id", sec.id); fetchData(); }}
+                        className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100">🗑️</button>
+                    </div>
+                  </div>
+
+                  {expandedGantt === "sec_" + sec.id && (
+                    <div className="border-t border-slate-100 p-4 bg-purple-50">
+                      <GanttEditor sectionId={sec.id} projectName={sec.name + " Master Gantt"} />
+                    </div>
+                  )}
+
+                  {activeSectionTab === sec.id && (
+                    <div className="border-t border-slate-100 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Projects in {sec.name}</p>
+                        <button onClick={() => { setEditingCustomId(null); setCustomForm({ project_code: "", project_name: "", customer: "", completion_pct: "0", status: "on_track", summary_text: "" }); setExpandedActions("custom_form_" + sec.id); }}
+                          className="px-3 py-1 bg-blue-950 text-white rounded-lg text-xs font-semibold hover:bg-blue-900">+ Add Project</button>
+                      </div>
+
+                      {expandedActions === "custom_form_" + sec.id && (
+                        <div className="bg-white rounded-lg border border-slate-200 p-4 mb-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Code</label>
+                              <input type="text" value={customForm.project_code} onChange={e => setCustomForm({ ...customForm, project_code: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Name *</label>
+                              <input type="text" value={customForm.project_name} onChange={e => setCustomForm({ ...customForm, project_name: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
+                              <input type="text" value={customForm.customer} onChange={e => setCustomForm({ ...customForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
+                              <input type="number" min="0" max="100" value={customForm.completion_pct} onChange={e => setCustomForm({ ...customForm, completion_pct: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+                              <select value={customForm.status} onChange={e => setCustomForm({ ...customForm, status: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                              </select></div>
+                            <div className="col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Summary</label>
+                              <textarea value={customForm.summary_text} onChange={e => setCustomForm({ ...customForm, summary_text: e.target.value })} rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button onClick={async () => {
+                              if (!customForm.project_name) { alert("Name required"); return; }
+                              setSaving(true);
+                              const payload = { section_id: sec.id, report_id: reportId, project_code: customForm.project_code || null, project_name: customForm.project_name, customer: customForm.customer || null, completion_pct: parseInt(customForm.completion_pct), status: customForm.status, summary_text: customForm.summary_text || null };
+                              if (editingCustomId) await supabase.from("custom_projects").update(payload).eq("id", editingCustomId);
+                              else await supabase.from("custom_projects").insert([payload]);
+                              setExpandedActions(null); setEditingCustomId(null); fetchData(); setSaving(false);
+                            }} disabled={saving} className="px-3 py-1.5 bg-blue-950 text-white rounded-lg text-xs font-semibold disabled:opacity-50">
+                              {saving ? "Saving..." : editingCustomId ? "Update" : "Add"}
+                            </button>
+                            <button onClick={() => { setExpandedActions(null); setEditingCustomId(null); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">Cancel</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {customProjects.filter(p => p.section_id === sec.id).length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-3">No projects yet.</p>
+                      ) : customProjects.filter(p => p.section_id === sec.id).map(p => (
+                        <div key={p.id} className="bg-white rounded-lg border border-slate-100 px-4 py-3 mb-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">{p.project_name}</p>
+                              <p className="text-xs text-slate-400">{p.customer} · {p.completion_pct}%</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => setExpandedActions(expandedActions === p.id ? null : p.id)}
+                                className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs hover:bg-purple-100">
+                                ▼ Actions ({(p.custom_action_items ?? []).length})
+                              </button>
+                              {sec.display_mode === "individual" && (
+                                <button onClick={() => setExpandedGantt(expandedGantt === p.id ? null : p.id)}
+                                  className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs hover:bg-amber-100">📊</button>
+                              )}
+                              <button onClick={() => { setEditingCustomId(p.id); setCustomForm({ project_code: p.project_code ?? "", project_name: p.project_name, customer: p.customer ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" }); setExpandedActions("custom_form_" + sec.id); }}
+                                className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️</button>
+                              <button onClick={async () => { if (!confirm("Delete " + p.project_name + "?")) return; await supabase.from("custom_projects").delete().eq("id", p.id); fetchData(); }}
+                                className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
+                            </div>
+                          </div>
+                          {expandedActions === p.id && <ActionItemsPanel projectId={p.id} items={p.custom_action_items ?? []} table="custom_action_items" fkField="custom_project_id" onRefresh={fetchData} />}
+                          {expandedGantt === p.id && <div className="border-t border-slate-100 p-4 bg-purple-50 mt-2"><GanttEditor customProjectId={p.id} projectName={p.project_name} /></div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
