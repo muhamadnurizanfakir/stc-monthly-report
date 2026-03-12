@@ -31,6 +31,7 @@ interface Props {
   projectId?: string;
   shohinProjectId?: string;
   engineeringProjectId?: string;
+  reportId?: string;
 }
 
 const MONTHS = [
@@ -93,7 +94,7 @@ const year2024width = monthPct(2025, 1) - monthPct(2024, 6);
 const year2025start = monthPct(2025, 1);
 const year2025width = 100 - monthPct(2025, 1);
 
-export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId }: Props) {
+export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -110,6 +111,8 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
         query = query.eq("shohin_project_id", shohinProjectId);
       } else if (engineeringProjectId) {
         query = query.eq("engineering_project_id", engineeringProjectId);
+      } else if (reportId) {
+        query = query.eq("report_id", reportId);
       }
 
       const { data } = await query;
@@ -117,7 +120,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
       setLoading(false);
     }
     load();
-  }, [projectId, shohinProjectId, engineeringProjectId]);
+  }, [projectId, shohinProjectId, engineeringProjectId, reportId]);
 
   if (loading) return (
     <div className="py-6 text-center text-slate-400 text-sm">Loading Gantt chart...</div>

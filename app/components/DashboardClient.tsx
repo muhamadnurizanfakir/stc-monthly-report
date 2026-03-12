@@ -104,7 +104,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
                 <StabilizerSection projects={projects} />
               )}
               {activeSection === "shohin" && (
-                <ShohinSection shohinProjects={shohinProjects} />
+                <ShohinSection shohinProjects={shohinProjects} reportId={selectedReport.id} />
               )}
               {activeSection === "engineering" && (
                 <EngineeringSection projects={engineeringProjects} />
