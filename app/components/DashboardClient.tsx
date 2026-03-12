@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Report, Project, ShohinProject, EngineeringProject } from "../lib/supabase";
 import { supabase } from "../lib/supabase";
 import Sidebar from "./Sidebar";
@@ -25,6 +25,15 @@ export default function DashboardClient({ initialReport, allReports, initialProj
   const [shohinProjects, setShohinProjects] = useState<ShohinProject[]>(initialShohin);
   const [engineeringProjects, setEngineeringProjects] = useState<EngineeringProject[]>(initialEngineering);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [reportList, setReportList] = useState<Report[]>(allReports);
+
+  useEffect(() => {
+    async function refreshReports() {
+      const { data } = await supabase.from("reports").select("*").order("report_date", { ascending: false });
+      if (data && data.length > 0) setReportList(data);
+    }
+    refreshReports();
+  }, []);
 
   async function handleReportChange(reportId: string) {
     const report = allReports.find(r => r.id === reportId);
@@ -62,7 +71,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
               onChange={e => handleReportChange(e.target.value)}
               className="bg-blue-900 text-white text-sm rounded-lg px-3 py-1.5 border border-blue-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              {allReports.map(r => (
+              {reportList.map(r => (
                 <option key={r.id} value={r.id}>{r.period_label}</option>
               ))}
             </select>
