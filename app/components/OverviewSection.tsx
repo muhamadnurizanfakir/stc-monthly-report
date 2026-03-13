@@ -37,9 +37,13 @@ function getCatColor(cat: string): string {
   return DYNAMIC_COLORS[Math.abs(hash) % DYNAMIC_COLORS.length];
 }
 const CAT_LABELS: Record<string, string> = {
-  coil_spring:    'Coil Spring',
-  stabilizer_bar: 'Stabilizer Bar',
-  engineering:    'Engineering',
+  coil_spring:     'Coil Spring',
+  stabilizer_bar:  'Stabilizer Bar',
+  'Material Change': 'Material Change',
+  shohin:          'Material Change',
+  material_change: 'Material Change',
+  Engineering:     'Engineering',
+  engineering:     'Engineering',
 };
 
 export default function OverviewSection({ projects, shohinProjects, engineeringProjects, customProjects, sections, reportLabel }: OverviewProps) {
@@ -121,7 +125,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
             {stats.categoryProgress.map(({ cat, avg, count, color }) => (
               <div key={cat}>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-semibold" style={{ color }}>{cat}</span>
+                  <span className="text-xs font-semibold" style={{ color }}>{CAT_LABELS[cat] ?? cat}</span>
                   <span className="text-xs text-slate-500">{avg}% &middot; {count} project{count !== 1 ? 's' : ''}</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-3">
