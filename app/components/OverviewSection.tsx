@@ -15,11 +15,27 @@ interface OverviewProps {
 }
 
 const CAT_COLORS: Record<string, string> = {
-  coil_spring:    '#1e3a8a',
-  stabilizer_bar: '#0891b2',
-  engineering:    '#7c3aed',
+  coil_spring:     '#1e3a8a',  // dark blue
+  stabilizer_bar:  '#0e7490',  // teal
+  'Material Change': '#b45309', // amber brown
+  shohin:          '#b45309',  // amber brown
+  material_change: '#b45309',  // amber brown
+  Engineering:     '#7c3aed',  // purple
+  engineering:     '#7c3aed',  // purple
+  Assembly:        '#be185d',  // pink
+  assembly:        '#be185d',  // pink
+  'Machining Parts': '#065f46', // dark green
+  machining_parts: '#065f46',  // dark green
+  other:           '#475569',  // slate
 };
 
+const DYNAMIC_COLORS = ['#b91c1c','#c2410c','#15803d','#0f766e','#1d4ed8','#6d28d9','#be185d','#0369a1','#92400e','#3f6212'];
+function getCatColor(cat: string): string {
+  if (CAT_COLORS[cat]) return CAT_COLORS[cat];
+  let hash = 0;
+  for (let i = 0; i < cat.length; i++) hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+  return DYNAMIC_COLORS[Math.abs(hash) % DYNAMIC_COLORS.length];
+}
 const CAT_LABELS: Record<string, string> = {
   coil_spring:    'Coil Spring',
   stabilizer_bar: 'Stabilizer Bar',
@@ -168,7 +184,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                   <td className="py-2 px-4 font-medium text-slate-700">{p.project_name}</td>
                   <td className="py-2 px-4">
                     <span className="px-2 py-0.5 rounded text-xs font-semibold"
-                      style={{ background: (CAT_COLORS[cat] ?? '#64748b') + '18', color: CAT_COLORS[cat] ?? '#64748b' }}>
+                      style={{ background: getCatColor(cat) + '20', color: getCatColor(cat) }}>
                       {CAT_LABELS[cat] ?? cat}
                     </span>
                   </td>
