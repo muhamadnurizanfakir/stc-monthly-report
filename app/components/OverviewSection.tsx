@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// recharts not needed
 import type { Project, ShohinProject, EngineeringProject, CustomProject, Section } from '../lib/supabase';
 import { StatusBadge, ProgressBar } from './StatusBadge';
 
@@ -67,7 +67,21 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
         return acc;
       }, {} as Record<string, number>)
     ).map(([name, value]) => ({ name, value }));
-    return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory, allVisible };
+    const categoryProgress = Object.entries(
+      allVisible.reduce((acc, p) => {
+        const cat = (p as {category?: string}).category ?? 'Other';
+        if (!acc[cat]) acc[cat] = { total: 0, sum: 0 };
+        acc[cat].total += 1;
+        acc[cat].sum += p.completion_pct;
+        return acc;
+      }, {} as Record<string, { total: number; sum: number }>)
+    ).map(([cat, { total, sum }]) => ({
+      cat,
+      avg: Math.round(sum / total),
+      count: total,
+      color: getCatColor(cat),
+    })).sort((a, b) => b.avg - a.avg);
+    return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory, allVisible, categoryProgress };
   }, [projects, shohinProjects, engineeringProjects, customProjects, sections]);
 
   const kpis = [
@@ -102,20 +116,22 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="font-bold text-slate-700 mb-4">Status Distribution</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={stats.statusDist} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
-                {stats.statusDist.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => `${v} projects`} />
-              <Legend iconType="circle" iconSize={8} />
-            </PieChart>
-          </ResponsiveContainer>
+          <h3 className="font-bold text-slate-700 mb-4">Category Progress</h3>
+          <div className="space-y-3">
+            {stats.categoryProgress.map(({ cat, avg, count, color }) => (
+              <div key={cat}>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-semibold" style={{ color }}>{cat}</span>
+                  <span className="text-xs text-slate-500">{avg}% &middot; {count} project{count !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-3">
+                  <div className="h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${avg}%`, background: color }} />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <h3 className="font-bold text-slate-700 mb-4">Customer Mix</h3>
           <div className="space-y-3 mt-2">
