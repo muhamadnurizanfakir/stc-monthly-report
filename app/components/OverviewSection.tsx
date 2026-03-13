@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-// recharts not needed
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Project, ShohinProject, EngineeringProject, CustomProject, Section } from '../lib/supabase';
 import { StatusBadge, ProgressBar } from './StatusBadge';
 
@@ -133,27 +133,48 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="font-bold text-slate-700 mb-4">Customer Mix</h3>
-          <div className="space-y-3 mt-2">
-            {Object.entries(
+          <h3 className="font-bold text-slate-700 mb-1">Customer Mix</h3>
+          <p className="text-xs text-slate-400 mb-3">OEM market share by project count</p>
+          {(() => {
+            const PIE_COLORS = ['#1e3a8a','#0e7490','#b45309','#7c3aed','#be185d','#065f46','#b91c1c','#0369a1','#92400e','#3f6212'];
+            const customerData = Object.entries(
               stats.allVisible.reduce((acc, p) => {
                 const c = (p as {customer?: string|null}).customer ?? 'Unknown';
                 acc[c] = (acc[c] ?? 0) + 1;
                 return acc;
               }, {} as Record<string, number>)
-            ).map(([customer, count]) => (
-              <div key={customer} className="flex items-center gap-2 text-xs">
-                <span className="w-20 text-slate-500 truncate shrink-0">{customer}</span>
-                <div className="flex-1 bg-slate-100 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full"
-                    style={{ width: `${(count / stats.allVisible.length) * 100}%`, background: '#1e3a8a' }}
-                  />
+            ).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+            const total = customerData.reduce((s, d) => s + d.value, 0);
+            const renderLabel = ({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, value = 0 }: { cx?: number; cy?: number; midAngle?: number; innerRadius?: number; outerRadius?: number; value?: number }) => {
+              const RADIAN = Math.PI / 180;
+              const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+              const x = cx + radius * Math.cos(-midAngle * RADIAN);
+              const y = cy + radius * Math.sin(-midAngle * RADIAN);
+              const pct = Math.round((value / total) * 100);
+              if (pct < 6) return null;
+              return (<text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>{pct}%</text>);
+            };
+            return (
+              <div className="flex flex-col items-center">
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={customerData} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false} label={renderLabel}>
+                      {customerData.map((_: unknown, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(value) => { const v = Number(value); return [`${v} project${v !== 1 ? 's' : ''} (${Math.round((v/total)*100)}%)`]; }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-1">
+                  {customerData.map(({ name, value }: {name: string, value: number}, i: number) => (
+                    <div key={name} className="flex items-center gap-1.5 text-xs text-slate-600">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      {name} <span className="text-slate-400">({value})</span>
+                    </div>
+                  ))}
                 </div>
-                <span className="w-4 text-slate-600 font-semibold shrink-0">{count}</span>
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       </div>
 
