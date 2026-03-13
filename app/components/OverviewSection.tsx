@@ -145,11 +145,17 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
             </thead>
             <tbody>
               {[...stats.allVisible].sort((a, b) => {
-                const order: Record<string, number> = { coil_spring: 0, stabilizer_bar: 1, engineering: 2 };
+                const catOrder: Record<string, number> = {
+                  coil_spring: 0, stabilizer_bar: 1,
+                  'Material Change': 2, shohin: 2,
+                  Engineering: 3, engineering: 3,
+                };
                 const ac = (a as {category?: string}).category ?? 'zzz';
                 const bc = (b as {category?: string}).category ?? 'zzz';
-                const catDiff = (order[ac] ?? 3) - (order[bc] ?? 3);
-                if (catDiff !== 0) return catDiff;
+                const ao = catOrder[ac] ?? 4;
+                const bo = catOrder[bc] ?? 4;
+                if (ao !== bo) return ao - bo;
+                if (ac !== bc) return ac.localeCompare(bc);
                 const acode = (a as {project_code?: string}).project_code ?? '';
                 const bcode = (b as {project_code?: string}).project_code ?? '';
                 return acode.localeCompare(bcode);
@@ -168,7 +174,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                   </td>
                   <td className="py-2 px-4 text-slate-500">{(p as {customer?: string|null}).customer ?? '—'}</td>
                   <td className="py-2 px-4 text-slate-500 font-mono whitespace-nowrap">
-                    {(p as {sop_date?: string|null}).sop_date ? new Date((p as {sop_date?: string|null}).sop_date!).toLocaleDateString('en-MY', { month: 'short', year: '2-digit' }) : '—'}
+                    {(() => { const s = (p as {sop_date?: string|null}).sop_date; return s ? new Date(s).toLocaleDateString('en-MY', { month: 'short', year: '2-digit' }) : '—'; })()}
                   </td>
                   <td className="py-2 px-4 w-36">
                     <ProgressBar pct={p.completion_pct} />

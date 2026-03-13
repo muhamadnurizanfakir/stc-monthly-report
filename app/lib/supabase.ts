@@ -66,6 +66,7 @@ export interface ShohinProject {
   project_code:   string | null;
   project_name:   string;
   customer:       string | null;
+  sop_date:       string | null;
   category:       string | null;
   completion_pct: number;
   status:         ProjectStatus;
@@ -170,8 +171,8 @@ export interface CustomProject {
   project_code:   string | null;
   project_name:   string;
   customer:       string | null;
-  model:          string | null;
   sop_date:       string | null;
+  model:          string | null;
   completion_pct: number;
   status:         ProjectStatus;
   category:       string | null;
