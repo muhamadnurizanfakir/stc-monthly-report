@@ -162,7 +162,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                       <Pie data={customerData} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false} label={renderLabel}>
                         {customerData.map((_: unknown, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                       </Pie>
-                      <Tooltip formatter={(value) => { const v = Number(value); return [`${Math.round((v/total)*100)}%`]; }} />
+                      <Tooltip contentStyle={{ fontSize: '11px', padding: '4px 8px' }} formatter={(value, name) => { const v = Number(value); return [`${String(name)}: ${Math.round((v/total)*100)}%`]; }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
