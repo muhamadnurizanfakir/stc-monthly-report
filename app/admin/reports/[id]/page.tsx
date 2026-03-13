@@ -18,10 +18,10 @@ const STATUSES = [
   { value: "completed", label: "Completed" },
 ];
 const emptyProject = { project_code: "", project_name: "", category: "coil_spring", customer: "", model: "", sop_date: "", volume: "", completion_pct: "0", status: "on_track", summary_text: "" };
-const emptyShohin = { project_name: "", customer: "", category: "Material Change", completion_pct: "0", status: "on_track", summary_text: "" };
-const emptyEng = { project_name: "", customer: "", model: "", sop_date: "", volume: "", category: "Engineering", summary_text: "", completion_pct: "0", status: "on_track" };
+const emptyShohin = { project_code: "", project_name: "", customer: "", category: "Material Change", completion_pct: "0", status: "on_track", summary_text: "" };
+const emptyEng = { project_code: "", project_name: "", customer: "", model: "", sop_date: "", volume: "", category: "Engineering", summary_text: "", completion_pct: "0", status: "on_track" };
 
-interface ShohinRow { id: string; project_name: string; customer: string | null; category: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; shohin_action_items?: ActionItemRow[]; }
+interface ShohinRow { id: string; project_code: string | null; project_name: string; customer: string | null; category: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; shohin_action_items?: ActionItemRow[]; }
 interface EngRow { id: string; project_name: string; customer: string | null; model: string | null; sop_date: string | null; volume: number | null; category: string | null; summary_text: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
 interface ActionItemRow { id: string; item_no: number | null; item_category?: string | null; issue_desc: string; action_plan: string | null; completion_pct: number; due_date: string | null; is_info_only: boolean; }
 
@@ -104,12 +104,12 @@ export default function ReportDetailPage() {
   // ---- Shohin CRUD ----
   function startEditShohin(s: ShohinRow) {
     setEditingShohinId(s.id); setShowForm(true);
-    setShohinForm({ project_name: s.project_name, customer: s.customer ?? "", category: s.category ?? "Material Change", completion_pct: s.completion_pct.toString(), status: s.status, summary_text: s.summary_text ?? "" });
+    setShohinForm({ project_code: s.project_code ?? "", project_name: s.project_name, customer: s.customer ?? "", category: s.category ?? "Material Change", completion_pct: s.completion_pct.toString(), status: s.status, summary_text: s.summary_text ?? "" });
   }
   async function handleSaveShohin() {
     if (!shohinForm.project_name) { alert("Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_name: shohinForm.project_name, customer: shohinForm.customer || null, category: shohinForm.category || null, completion_pct: parseInt(shohinForm.completion_pct), status: shohinForm.status, summary_text: shohinForm.summary_text || null };
+    const payload = { report_id: reportId, project_code: shohinForm.project_code || null, project_name: shohinForm.project_name, customer: shohinForm.customer || null, category: shohinForm.category || null, completion_pct: parseInt(shohinForm.completion_pct), status: shohinForm.status, summary_text: shohinForm.summary_text || null };
     if (editingShohinId) await supabase.from("shohin_projects").update(payload).eq("id", editingShohinId);
     else await supabase.from("shohin_projects").insert([payload]);
     setSuccessMsg("Saved!"); setShowForm(false); setEditingShohinId(null);
@@ -124,7 +124,7 @@ export default function ReportDetailPage() {
   // ---- Engineering CRUD ----
   function startEditEng(e: EngRow) {
     setEditingEngId(e.id); setShowForm(true);
-    setEngForm({ project_name: e.project_name, customer: e.customer ?? "", model: e.model ?? "", sop_date: e.sop_date ?? "", volume: e.volume?.toString() ?? "", category: e.category ?? "Engineering", summary_text: e.summary_text ?? "", completion_pct: e.completion_pct.toString(), status: e.status });
+    setEngForm({ project_code: (e as {project_code?: string|null}).project_code ?? "", project_name: e.project_name, customer: e.customer ?? "", model: e.model ?? "", sop_date: e.sop_date ?? "", volume: e.volume?.toString() ?? "", category: e.category ?? "Engineering", summary_text: e.summary_text ?? "", completion_pct: e.completion_pct.toString(), status: e.status });
   }
   async function handleSaveEng() {
     if (!engForm.project_name) { alert("Name required"); return; }
@@ -222,7 +222,9 @@ export default function ReportDetailPage() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h2 className="font-bold text-slate-800 mb-4">{editingShohinId ? "Edit Material Change Project" : "Add Material Change Project"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Project Name *</label>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Code</label>
+              <input type="text" value={shohinForm.project_code} onChange={e => setShohinForm({ ...shohinForm, project_code: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="md:col-span-1"><label className="block text-xs font-semibold text-slate-600 mb-1">Project Name *</label>
               <input type="text" value={shohinForm.project_name} onChange={e => setShohinForm({ ...shohinForm, project_name: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
               <input type="text" value={shohinForm.customer} onChange={e => setShohinForm({ ...shohinForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
@@ -248,7 +250,9 @@ export default function ReportDetailPage() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <h2 className="font-bold text-slate-800 mb-4">{editingEngId ? "Edit Engineering Project" : "Add Engineering Project"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Name *</label>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Code</label>
+              <input type="text" value={engForm.project_code} onChange={e => setEngForm({ ...engForm, project_code: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="md:col-span-1"><label className="block text-xs font-semibold text-slate-600 mb-1">Name *</label>
               <input type="text" value={engForm.project_name} onChange={e => setEngForm({ ...engForm, project_name: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
               <input type="text" value={engForm.customer} onChange={e => setEngForm({ ...engForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>

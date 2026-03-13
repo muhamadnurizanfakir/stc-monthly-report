@@ -63,6 +63,7 @@ export interface ActionItem {
 export interface ShohinProject {
   id:             string;
   report_id:      string;
+  project_code:   string | null;
   project_name:   string;
   customer:       string | null;
   category:       string | null;
