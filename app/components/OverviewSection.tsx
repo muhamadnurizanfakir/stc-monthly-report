@@ -155,20 +155,23 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
               return (<text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>{pct}%</text>);
             };
             return (
-              <div className="flex flex-col items-center">
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={customerData} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false} label={renderLabel}>
-                      {customerData.map((_: unknown, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(value) => { const v = Number(value); return [`${v} project${v !== 1 ? 's' : ''} (${Math.round((v/total)*100)}%)`]; }} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-1">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <ResponsiveContainer width="100%" height={210}>
+                    <PieChart>
+                      <Pie data={customerData} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false} label={renderLabel}>
+                        {customerData.map((_: unknown, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip formatter={(value) => { const v = Number(value); return [`${v} project${v !== 1 ? 's' : ''} (${Math.round((v/total)*100)}%)`]; }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-col gap-2 shrink-0 w-[120px]">
                   {customerData.map(({ name, value }: {name: string, value: number}, i: number) => (
                     <div key={name} className="flex items-center gap-1.5 text-xs text-slate-600">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      {name} <span className="text-slate-400">({value})</span>
+                      <span className="truncate font-medium">{name}</span>
+                      <span className="text-slate-400 shrink-0">{Math.round((value/total)*100)}%</span>
                     </div>
                   ))}
                 </div>
