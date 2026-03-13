@@ -7,6 +7,7 @@ interface GanttMilestone {
   milestone_date: string;
   shape: string;
   label: string | null;
+  is_achieved: boolean;
 }
 interface GanttBar {
   id: string;
@@ -14,6 +15,7 @@ interface GanttBar {
   start_date: string;
   end_date: string;
   label: string | null;
+  actual_end: string | null;
 }
 interface GanttActivity {
   id: string;
@@ -153,14 +155,21 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
               <div key={act.id} style={{ height: ROW_H, top: i * ROW_H, position: "absolute", width: "100%" }}
                 className="border-b border-slate-50">
                 {act.gantt_bars.map(bar => (
-                  <div key={bar.id} title={bar.label ?? bar.bar_type}
-                    style={{ left: pct(bar.start_date) + "%", width: bWidth(bar.start_date, bar.end_date) + "%", top: "25%", height: "50%", position: "absolute", background: BAR_COLORS[bar.bar_type] ?? "#64748b", borderRadius: 3, opacity: 0.85 }}>
-                    {bar.label && <span className="text-white text-xs px-1 truncate leading-none" style={{ fontSize: 9 }}>{bar.label}</span>}
+                  <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: bWidth(bar.start_date, bar.end_date) + "%", top: "25%", height: "50%", position: "absolute" }}>
+                    {/* Plan bar */}
+                    <div title={bar.label ?? bar.bar_type} style={{ position: "absolute", inset: 0, background: BAR_COLORS[bar.bar_type] ?? "#64748b", borderRadius: 3, opacity: 0.85 }}>
+                      {bar.label && <span className="text-white text-xs px-1 truncate leading-none" style={{ fontSize: 9 }}>{bar.label}</span>}
+                    </div>
+                    {/* Actual progress green bar */}
+                    {bar.actual_end && (
+                      <div title={"Actual: " + bar.actual_end}
+                        style={{ position: "absolute", top: 0, left: 0, height: "100%", width: bWidth(bar.start_date, bar.actual_end) + "%", background: "#16a34a", borderRadius: 3, opacity: 0.9, maxWidth: "100%" }} />
+                    )}
                   </div>
                 ))}
                 {act.gantt_milestones.map(ms => (
-                  <div key={ms.id} title={ms.label ?? ms.shape}
-                    style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", fontSize: 14, lineHeight: 1 }}>
+                  <div key={ms.id} title={(ms.label ?? ms.shape) + (ms.is_achieved ? " ✅ Achieved" : "")}
+                    style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", fontSize: 14, lineHeight: 1, color: ms.is_achieved ? "#16a34a" : undefined }}>
                     {ms.shape === "star" ? "★" : "◆"}
                   </div>
                 ))}
@@ -178,6 +187,8 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           ))}
           <div className="flex items-center gap-1"><span style={{ fontSize: 12 }}>★</span><span className="text-xs text-slate-500">Milestone</span></div>
           <div className="flex items-center gap-1"><span style={{ fontSize: 12 }}>◆</span><span className="text-xs text-slate-500">Event</span></div>
+          <div className="flex items-center gap-1"><span style={{ fontSize: 12, color: "#16a34a" }}>◆</span><span className="text-xs text-slate-500">Achieved</span></div>
+          <div className="flex items-center gap-1"><span style={{ display:"inline-block", width:12, height:8, background:"#16a34a", borderRadius:2 }}></span><span className="text-xs text-slate-500">Actual</span></div>
         </div>
       </div>
     </div>

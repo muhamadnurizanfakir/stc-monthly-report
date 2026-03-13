@@ -8,6 +8,7 @@ interface GanttMilestone {
   milestone_date: string;
   shape: string;
   label: string | null;
+  is_achieved: boolean;
 }
 
 interface GanttBar {
@@ -16,6 +17,7 @@ interface GanttBar {
   start_date: string;
   end_date: string;
   label: string | null;
+  actual_end: string | null;
 }
 
 interface GanttActivity {
@@ -56,8 +58,8 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
   const [editingMs, setEditingMs] = useState<GanttMilestone | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [barForm, setBarForm] = useState({ bar_type: "plan", start_date: "", end_date: "", label: "" });
-  const [msForm, setMsForm] = useState({ milestone_date: "", shape: "diamond", label: "" });
+  const [barForm, setBarForm] = useState({ bar_type: "plan", start_date: "", end_date: "", actual_end: "", label: "" });
+  const [msForm, setMsForm] = useState({ milestone_date: "", shape: "diamond", label: "", is_achieved: false });
 
   useEffect(() => { fetchActivities(); }, []);
 
@@ -83,10 +85,10 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     setShowMsForm(null);
     if (bar) {
       setEditingBar(bar);
-      setBarForm({ bar_type: bar.bar_type, start_date: bar.start_date, end_date: bar.end_date, label: bar.label ?? "" });
+      setBarForm({ bar_type: bar.bar_type, start_date: bar.start_date, end_date: bar.end_date, actual_end: bar.actual_end ?? "", label: bar.label ?? "" });
     } else {
       setEditingBar(null);
-      setBarForm({ bar_type: "plan", start_date: "", end_date: "", label: "" });
+      setBarForm({ bar_type: "plan", start_date: "", end_date: "", actual_end: "", label: "" });
     }
   }
 
@@ -95,10 +97,10 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     setShowBarForm(null);
     if (ms) {
       setEditingMs(ms);
-      setMsForm({ milestone_date: ms.milestone_date, shape: ms.shape, label: ms.label ?? "" });
+      setMsForm({ milestone_date: ms.milestone_date, shape: ms.shape, label: ms.label ?? "", is_achieved: ms.is_achieved ?? false });
     } else {
       setEditingMs(null);
-      setMsForm({ milestone_date: "", shape: "diamond", label: "" });
+      setMsForm({ milestone_date: "", shape: "diamond", label: "", is_achieved: false });
     }
   }
 
@@ -110,6 +112,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
       bar_type: barForm.bar_type,
       start_date: barForm.start_date,
       end_date: barForm.end_date,
+      actual_end: barForm.actual_end || null,
       label: barForm.label || null,
     };
     if (editingBar) {
@@ -137,6 +140,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
       milestone_date: msForm.milestone_date,
       shape: msForm.shape,
       label: msForm.label || null,
+      is_achieved: msForm.is_achieved,
     };
     if (editingMs) {
       await supabase.from("gantt_milestones").update(payload).eq("id", editingMs.id);
@@ -286,6 +290,13 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                               className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Actual End Date <span className="text-green-600">(green bar)</span></label>
+                            <input type="date" className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              value={barForm.actual_end}
+                              onChange={e => setBarForm({ ...barForm, actual_end: e.target.value })}
+                            />
+                          </div>
                         </div>
                         <div className="flex gap-2 mt-2">
                           <button
@@ -386,6 +397,12 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                             />
                           </div>
                         </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <input type="checkbox" id="is_achieved" checked={msForm.is_achieved}
+                            onChange={e => setMsForm({ ...msForm, is_achieved: e.target.checked })}
+                            className="w-4 h-4 accent-green-600" />
+                          <label htmlFor="is_achieved" className="text-xs text-slate-600 font-semibold">Mark as Achieved <span className="text-green-600">(turns green)</span></label>
+                        </div>
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => saveMilestone(act.id)}
@@ -411,7 +428,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                         {act.gantt_milestones.map(ms => (
                           <div key={ms.id} className="flex items-center justify-between bg-white rounded border border-slate-100 px-3 py-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm">{ms.shape === "star" ? "★" : "◆"}</span>
+                              <span className="text-sm" style={{ color: ms.is_achieved ? "#16a34a" : "#94a3b8" }}>{ms.shape === "star" ? "★" : "◆"}</span>
                               <span className="text-xs text-slate-600">{ms.milestone_date}</span>
                               {ms.label && (
                                 <span className="text-xs text-slate-500 italic">&quot;{ms.label}&quot;</span>
@@ -422,10 +439,8 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                                 onClick={() => openMsForm(act.id, ms)}
                                 className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100"
                               >✏️</button>
-                              <button
-                                onClick={() => deleteMilestone(ms.id)}
-                                className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100"
-                              >🗑️</button>
+                              <button onClick={async () => { await supabase.from("gantt_milestones").update({ is_achieved: !ms.is_achieved }).eq("id", ms.id); fetchActivities(); }} className={"px-2 py-1 rounded text-xs font-semibold " + (ms.is_achieved ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500")}>{ms.is_achieved ? "✅ Achieved" : "○ Mark Done"}</button>
+                              <button onClick={() => deleteMilestone(ms.id)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
                             </div>
                           </div>
                         ))}
