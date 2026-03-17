@@ -127,28 +127,37 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
         {/* Year header */}
         <div className="flex" style={{ marginLeft: LABEL_W }}>
           {Object.entries(
-            months.reduce((acc, m) => { acc[m.year] = (acc[m.year] ?? 0) + 1; return acc; }, {} as Record<number, number>)
-          ).map(([year, count]) => (
-            <div key={year} style={{ flex: count }} className="text-center text-xs font-bold text-white bg-blue-950 py-1 border-r border-blue-800">
+            months.reduce((acc, m) => {
+              const days = new Date(m.year, m.month, 0).getDate();
+              acc[m.year] = (acc[m.year] ?? 0) + days;
+              return acc;
+            }, {} as Record<number, number>)
+          ).map(([year, days]) => (
+            <div key={year} style={{ width: (Number(days) / totalDays * 100) + "%" }} className="text-center text-xs font-bold text-white bg-blue-950 py-1 border-r border-blue-800 shrink-0">
               {year}
             </div>
           ))}
         </div>
         {/* Month header */}
         <div className="flex border-b border-slate-200" style={{ marginLeft: LABEL_W }}>
-          {months.map((m, i) => (
-            <div key={i} style={{ flex: 1 }} className="text-center text-xs text-slate-500 py-1 border-r border-slate-100 font-medium">
-              {m.label}
-            </div>
-          ))}
+          {months.map((m, i) => {
+            const daysInMonth = new Date(m.year, m.month, 0).getDate();
+            const w = (daysInMonth / totalDays) * 100;
+            return (
+              <div key={i} style={{ width: w + "%" }} className="text-center text-xs text-slate-500 py-1 border-r border-slate-100 font-medium shrink-0">
+                {m.label}
+              </div>
+            );
+          })}
         </div>
         {/* Activity rows */}
         <div style={{ height: chartH, position: "relative" }}>
           {/* Column grid */}
           <div className="absolute inset-0 flex pointer-events-none" style={{ marginLeft: LABEL_W }}>
-            {months.map((m, i) => (
-              <div key={i} style={{ flex: 1 }} className="border-r border-slate-100 h-full" />
-            ))}
+            {months.map((m, i) => {
+              const daysInMonth = new Date(m.year, m.month, 0).getDate();
+              return <div key={i} style={{ width: (daysInMonth / totalDays * 100) + "%" }} className="border-r border-slate-100 h-full shrink-0" />;
+            })}
           </div>
           {/* Row labels */}
           <div className="absolute top-0 left-0 bottom-0" style={{ width: LABEL_W }}>
