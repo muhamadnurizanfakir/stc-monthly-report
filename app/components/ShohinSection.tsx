@@ -18,7 +18,7 @@ export default function ShohinSection({ shohinProjects, reportId, onRefresh }: P
   const visible = shohinProjects.filter(p => p.is_visible !== false);
   const hidden = shohinProjects.filter(p => p.is_visible === false);
   const displayProjects = showHidden ? shohinProjects : visible;
-  const allActionItems = displayProjects.flatMap(p => (p.shohin_action_items ?? []).map(item => ({ ...item, project_name: p.project_name })));
+  const allActionItems = displayProjects.flatMap(p => (p.shohin_action_items ?? []).map(item => ({ ...item, project_name: p.project_name }))).sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
   const overallPct = displayProjects.length > 0 ? Math.round(displayProjects.reduce((sum, p) => sum + p.completion_pct, 0) / displayProjects.length) : 0;
 
   async function toggleVisibility(id: string, current: boolean) {

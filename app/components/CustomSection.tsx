@@ -8,7 +8,7 @@ import { supabase } from "../lib/supabase";
 function IndividualCard({ project, sectionColor, onRefresh }: { project: CustomProject; sectionColor: string; onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(project.is_visible !== false);
-  const items = project.custom_action_items ?? [];
+  const items = [...(project.custom_action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
   async function toggleVisibility() {
     const newVal = !visible;
     setVisible(newVal);
@@ -96,7 +96,7 @@ function CombinedCard({ section, projects, onRefresh }: { section: Section; proj
   const visible = projects.filter(p => p.is_visible !== false);
   const hidden = projects.filter(p => p.is_visible === false);
   const display = showHidden ? projects : visible;
-  const allItems = display.flatMap(p => (p.custom_action_items ?? []).map(item => ({ ...item, project_name: p.project_name })));
+  const allItems = display.flatMap(p => (p.custom_action_items ?? []).map(item => ({ ...item, project_name: p.project_name }))).sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
   const overallPct = display.length > 0 ? Math.round(display.reduce((s, p) => s + p.completion_pct, 0) / display.length) : 0;
   async function toggleVisibility(id: string, current: boolean) {
     await supabase.from("custom_projects").update({ is_visible: !current }).eq("id", id);

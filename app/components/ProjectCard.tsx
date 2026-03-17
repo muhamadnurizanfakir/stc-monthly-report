@@ -14,7 +14,7 @@ interface ProjectCardProps {
 export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const [visible, setVisible] = useState(project.is_visible !== false);
   const [expanded, setExpanded] = useState(false);
-  const items = project.action_items ?? [];
+  const items = [...(project.action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-4">

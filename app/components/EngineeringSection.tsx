@@ -8,7 +8,7 @@ import { supabase } from "../lib/supabase";
 function EngineeringCard({ project, onRefresh }: { project: EngineeringProject; onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(project.is_visible !== false);
-  const items = project.engineering_action_items ?? [];
+  const items = [...(project.engineering_action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
 
   async function toggleVisibility() {
     const newVal = !visible;
