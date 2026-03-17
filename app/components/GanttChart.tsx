@@ -176,8 +176,14 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 {act.gantt_bars.map(bar => (
                   <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: bWidth(bar.start_date, bar.end_date) + "%", top: "25%", height: "50%", position: "absolute" }}>
                     {/* Plan bar */}
-                    <div title={bar.label ?? bar.bar_type} style={{ position: "absolute", inset: 0, background: BAR_COLORS[bar.bar_type] ?? "#64748b", borderRadius: 3, opacity: 0.85 }}>
-                      {bar.label && <span className="text-white text-xs px-1 truncate leading-none" style={{ fontSize: 9 }}>{bar.label}</span>}
+                    <div title={bar.label ?? bar.bar_type} style={{ position: "absolute", inset: 0, background: BAR_COLORS[bar.bar_type] ?? "#64748b", borderRadius: 3, opacity: 0.85, overflow: "visible" }}>
+                      {bar.label && (() => {
+                        const barW = bWidth(bar.start_date, bar.end_date);
+                        const isShort = barW < 8;
+                        return isShort
+                          ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color: BAR_COLORS[bar.bar_type] ?? "#64748b", fontWeight: 600 }}>{bar.label}</span>
+                          : <span style={{ position: "absolute", left: 2, top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600 }}>{bar.label}</span>;
+                      })()}
                     </div>
                     {/* Actual progress green bar */}
                     {bar.actual_end && bar.bar_type === "plan" && (
