@@ -162,11 +162,12 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           </div>
           {/* Today line */}
           {(() => {
-            const todayPct = pct(new Date().toISOString().split('T')[0]);
+            const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }); // YYYY-MM-DD in MYT
+            const todayPct = pct(todayStr);
             if (todayPct <= 0 || todayPct >= 100) return null;
             return (
               <div style={{ position: "absolute", left: `calc(${todayPct}% + 0px)`, top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}
-                title={"Today: " + new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}>
+                title={"Today: " + new Date().toLocaleDateString('en-MY', { timeZone: 'Asia/Kuala_Lumpur', day: 'numeric', month: 'short', year: 'numeric' })}>
                 <span style={{ position: "absolute", top: 0, left: 3, fontSize: 8, color: "#f97316", fontWeight: 700, whiteSpace: "nowrap" }}>Today</span>
               </div>
             );
