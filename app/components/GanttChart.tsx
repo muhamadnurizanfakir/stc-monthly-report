@@ -188,7 +188,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                     ) : (
                       /* Actual / Postponed - solid bar */
                       <div title={(bar.label ?? bar.bar_type) + (bar.is_done ? " ✅ Done" : " (in progress)")}
-                        style={{ position: "absolute", inset: 0, background: color, borderRadius: 3, opacity: 0.9, overflow: "visible" }}>
+                        style={{ position: "absolute", inset: 0, background: color, borderRadius: 3, opacity: 0.55, overflow: "visible" }}>
                         {/* Label */}
                         {bar.label && (isShort
                           ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color, fontWeight: 600 }}>{bar.label}</span>
