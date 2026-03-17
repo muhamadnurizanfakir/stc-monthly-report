@@ -162,7 +162,8 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           </div>
           {/* Today line */}
           {(() => {
-            const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }); // YYYY-MM-DD in MYT
+            const now = new Date();
+            const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
             const todayPct = pct(todayStr);
             if (todayPct <= 0 || todayPct >= 100) return null;
             return (
