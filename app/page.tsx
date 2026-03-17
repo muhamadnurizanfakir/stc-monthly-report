@@ -8,7 +8,7 @@ import {
 } from './lib/supabase';
 import DashboardClient from './components/DashboardClient';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const { data: reports } = await supabase
