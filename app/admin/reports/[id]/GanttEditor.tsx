@@ -58,7 +58,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
   const [editingMs, setEditingMs] = useState<GanttMilestone | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [barForm, setBarForm] = useState({ bar_type: "plan", start_date: "", end_date: "", actual_end: "", label: "" });
+  const [barForm, setBarForm] = useState({ bar_type: "plan", start_date: "", end_date: "", label: "" });
   const [msForm, setMsForm] = useState({ milestone_date: "", shape: "diamond", label: "", is_achieved: false });
 
   useEffect(() => { fetchActivities(); }, []);
@@ -85,10 +85,10 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     setShowMsForm(null);
     if (bar) {
       setEditingBar(bar);
-      setBarForm({ bar_type: bar.bar_type, start_date: bar.start_date, end_date: bar.end_date, actual_end: bar.actual_end ?? "", label: bar.label ?? "" });
+      setBarForm({ bar_type: bar.bar_type, start_date: bar.start_date, end_date: bar.end_date, label: bar.label ?? "" });
     } else {
       setEditingBar(null);
-      setBarForm({ bar_type: "plan", start_date: "", end_date: "", actual_end: "", label: "" });
+      setBarForm({ bar_type: "plan", start_date: "", end_date: "", label: "" });
     }
   }
 
@@ -112,8 +112,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
       bar_type: barForm.bar_type,
       start_date: barForm.start_date,
       end_date: barForm.end_date,
-      actual_end: barForm.actual_end || null,
-      label: barForm.label || null,
+            label: barForm.label || null,
     };
     if (editingBar) {
       await supabase.from("gantt_bars").update(payload).eq("id", editingBar.id);
@@ -288,13 +287,6 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                               value={barForm.end_date}
                               onChange={e => setBarForm({ ...barForm, end_date: e.target.value })}
                               className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-slate-500 mb-1">Actual End Date <span className="text-green-600">(green bar)</span></label>
-                            <input type="date" className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              value={barForm.actual_end}
-                              onChange={e => setBarForm({ ...barForm, actual_end: e.target.value })}
                             />
                           </div>
                         </div>

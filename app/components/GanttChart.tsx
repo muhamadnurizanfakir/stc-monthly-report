@@ -185,11 +185,6 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                           : <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600, textAlign: "center" }}>{bar.label}</span>;
                       })()}
                     </div>
-                    {/* Actual progress green bar */}
-                    {bar.actual_end && bar.bar_type === "plan" && (
-                      <div title={"Actual progress: " + bar.actual_end}
-                        style={{ position: "absolute", top: 0, left: 0, height: "100%", width: Math.min(bWidth(bar.start_date, bar.actual_end), 100) + "%", background: "#16a34a", borderRadius: 3, opacity: 0.9 }} />
-                    )}
                   </div>
                 ))}
                 {act.gantt_milestones.map(ms => (
@@ -213,7 +208,6 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           <div className="flex items-center gap-1"><span style={{ fontSize: 12 }}>★</span><span className="text-xs text-slate-500">Milestone</span></div>
           <div className="flex items-center gap-1"><span style={{ fontSize: 12 }}>◆</span><span className="text-xs text-slate-500">Event</span></div>
           <div className="flex items-center gap-1"><span style={{ fontSize: 12, color: "#16a34a" }}>◆</span><span className="text-xs text-slate-500">Achieved</span></div>
-          <div className="flex items-center gap-1"><span style={{ display:"inline-block", width:12, height:8, background:"#16a34a", borderRadius:2 }}></span><span className="text-xs text-slate-500">Progress</span></div>
         </div>
       </div>
     </div>
