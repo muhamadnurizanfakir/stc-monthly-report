@@ -16,6 +16,7 @@ interface GanttBar {
   end_date: string;
   label: string | null;
   actual_end: string | null;
+  is_done: boolean;
 }
 interface GanttActivity {
   id: string;
@@ -40,6 +41,7 @@ const BAR_COLORS: Record<string, string> = {
   actual:    "#16a34a",
   postponed: "#dc2626",
 };
+const PLAN_OUTLINE = "#1e3a8a";
 
 function buildRange(activities: GanttActivity[]) {
   const allDates: number[] = [];
@@ -173,20 +175,39 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
             {activities.map((act, i) => (
               <div key={act.id} style={{ height: ROW_H, top: i * ROW_H, position: "absolute", width: "100%" }}
                 className="border-b border-slate-50">
-                {act.gantt_bars.map(bar => (
-                  <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: bWidth(bar.start_date, bar.end_date) + "%", top: "25%", height: "50%", position: "absolute" }}>
-                    {/* Plan bar */}
-                    <div title={bar.label ?? bar.bar_type} style={{ position: "absolute", inset: 0, background: BAR_COLORS[bar.bar_type] ?? "#64748b", borderRadius: 3, opacity: 0.85, overflow: "visible" }}>
-                      {bar.label && (() => {
-                        const barW = bWidth(bar.start_date, bar.end_date);
-                        const isShort = barW < 8;
-                        return isShort
-                          ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color: BAR_COLORS[bar.bar_type] ?? "#64748b", fontWeight: 600 }}>{bar.label}</span>
-                          : <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600, textAlign: "center" }}>{bar.label}</span>;
-                      })()}
-                    </div>
+                {act.gantt_bars.map(bar => {
+                  const isPlan = bar.bar_type === "plan";
+                  const barW = bWidth(bar.start_date, bar.end_date);
+                  const isShort = barW < 8;
+                  const color = BAR_COLORS[bar.bar_type] ?? "#64748b";
+                  return (
+                  <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: barW + "%", top: "20%", height: "60%", position: "absolute" }}>
+                    {/* Plan bar - always show as outline */}
+                    {isPlan ? (
+                      <div title={"Plan: " + bar.start_date + " → " + bar.end_date} style={{ position: "absolute", inset: 0, background: "transparent", border: "2px solid " + PLAN_OUTLINE, borderRadius: 3, opacity: 0.7 }} />
+                    ) : (
+                      /* Actual / Postponed - solid bar */
+                      <div title={(bar.label ?? bar.bar_type) + (bar.is_done ? " ✅ Done" : " (in progress)")}
+                        style={{ position: "absolute", inset: 0, background: color, borderRadius: 3, opacity: 0.9, overflow: "visible" }}>
+                        {/* Label */}
+                        {bar.label && (isShort
+                          ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color, fontWeight: 600 }}>{bar.label}</span>
+                          : <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
+                        )}
+                        {/* Done checkmark at right edge */}
+                        {bar.is_done && (
+                          <span style={{ position: "absolute", right: -8, top: "50%", transform: "translateY(-50%)", fontSize: 10 }}>✅</span>
+                        )}
+                      </div>
+                    )}
+                    {/* Plan label */}
+                    {isPlan && bar.label && (isShort
+                      ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color: PLAN_OUTLINE, fontWeight: 600 }}>{bar.label}</span>
+                      : <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: PLAN_OUTLINE, fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
                 {act.gantt_milestones.map(ms => (
                   <div key={ms.id} title={(ms.label ?? ms.shape) + (ms.is_achieved ? " ✅ Achieved" : "")}
                     style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", fontSize: 14, lineHeight: 1, color: ms.is_achieved ? "#16a34a" : undefined }}>

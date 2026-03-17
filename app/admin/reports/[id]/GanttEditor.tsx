@@ -18,6 +18,7 @@ interface GanttBar {
   end_date: string;
   label: string | null;
   actual_end: string | null;
+  is_done: boolean;
 }
 
 interface GanttActivity {
@@ -58,7 +59,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
   const [editingMs, setEditingMs] = useState<GanttMilestone | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [barForm, setBarForm] = useState({ bar_type: "plan", start_date: "", end_date: "", label: "" });
+  const [barForm, setBarForm] = useState({ bar_type: "plan", start_date: "", end_date: "", label: "", is_done: false });
   const [msForm, setMsForm] = useState({ milestone_date: "", shape: "diamond", label: "", is_achieved: false });
 
   useEffect(() => { fetchActivities(); }, []);
@@ -85,10 +86,10 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     setShowMsForm(null);
     if (bar) {
       setEditingBar(bar);
-      setBarForm({ bar_type: bar.bar_type, start_date: bar.start_date, end_date: bar.end_date, label: bar.label ?? "" });
+      setBarForm({ bar_type: bar.bar_type, start_date: bar.start_date, end_date: bar.end_date, label: bar.label ?? "", is_done: bar.is_done ?? false });
     } else {
       setEditingBar(null);
-      setBarForm({ bar_type: "plan", start_date: "", end_date: "", label: "" });
+      setBarForm({ bar_type: "plan", start_date: "", end_date: "", label: "", is_done: false });
     }
   }
 
@@ -113,6 +114,7 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
       start_date: barForm.start_date,
       end_date: barForm.end_date,
             label: barForm.label || null,
+      is_done: barForm.is_done,
     };
     if (editingBar) {
       await supabase.from("gantt_bars").update(payload).eq("id", editingBar.id);
@@ -290,6 +292,12 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                             />
                           </div>
                         </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <input type="checkbox" id="is_done_bar" checked={barForm.is_done}
+                            onChange={e => setBarForm({ ...barForm, is_done: e.target.checked })}
+                            className="w-4 h-4 accent-green-600" />
+                          <label htmlFor="is_done_bar" className="text-xs text-slate-600 font-semibold">Mark as Done ✅ <span className="text-green-600">(shows completion)</span></label>
+                        </div>
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => saveBar(act.id)}
@@ -324,8 +332,10 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                               {bar.label && (
                                 <span className="text-xs text-slate-500 italic">&quot;{bar.label}&quot;</span>
                               )}
+                              {bar.is_done && <span className="text-green-600 text-xs font-bold">✅</span>}
                             </div>
                             <div className="flex gap-1">
+                              <button onClick={async () => { await supabase.from("gantt_bars").update({ is_done: !bar.is_done }).eq("id", bar.id); fetchActivities(); }} className={"px-2 py-1 rounded text-xs font-semibold " + (bar.is_done ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500")}>{bar.is_done ? "✅ Done" : "○ Mark Done"}</button>
                               <button
                                 onClick={() => openBarForm(act.id, bar)}
                                 className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100"
