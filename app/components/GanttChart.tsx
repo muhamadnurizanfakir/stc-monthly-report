@@ -107,11 +107,10 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
     const offset = (parseDate(dateStr).getTime() - start.getTime()) / 86400000;
     return Math.max(0, Math.min(100, (offset / totalDays) * 100));
   }
-  function bWidth(s: string, e: string) {
+  function bWidth(s: string, e: string, addDay = true) {
     const sd = Math.max(0, (parseDate(s).getTime() - start.getTime()) / 86400000);
-    // Add 1 day to end date to include the full last day
     const endDate = parseDate(e);
-    endDate.setDate(endDate.getDate() + 1);
+    if (addDay) endDate.setDate(endDate.getDate() + 1);
     const ed = Math.min(totalDays, (endDate.getTime() - start.getTime()) / 86400000);
     return Math.max(0.5, ((ed - sd) / totalDays) * 100);
   }
@@ -188,7 +187,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 className="border-b border-slate-50">
                 {act.gantt_bars.map(bar => {
                   const isPlan = bar.bar_type === "plan";
-                  const barW = bWidth(bar.start_date, bar.end_date);
+                  const barW = bWidth(bar.start_date, bar.end_date, isPlan);
                   const isShort = barW < 8;
                   const color = BAR_COLORS[bar.bar_type] ?? "#64748b";
                   return (
