@@ -161,6 +161,17 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
               return <div key={i} style={{ width: (daysInMonth / totalDays * 100) + "%" }} className="border-r border-slate-100 h-full shrink-0" />;
             })}
           </div>
+          {/* Today line */}
+          {(() => {
+            const todayPct = pct(new Date().toISOString().split('T')[0]);
+            if (todayPct <= 0 || todayPct >= 100) return null;
+            return (
+              <div style={{ position: "absolute", left: `calc(${todayPct}% + 0px)`, top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}
+                title={"Today: " + new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}>
+                <span style={{ position: "absolute", top: 0, left: 3, fontSize: 8, color: "#f97316", fontWeight: 700, whiteSpace: "nowrap" }}>Today</span>
+              </div>
+            );
+          })()}
           {/* Row labels */}
           <div className="absolute top-0 left-0 bottom-0" style={{ width: LABEL_W }}>
             {activities.map((act, i) => (
