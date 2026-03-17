@@ -182,7 +182,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                         const isShort = barW < 8;
                         return isShort
                           ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color: BAR_COLORS[bar.bar_type] ?? "#64748b", fontWeight: 600 }}>{bar.label}</span>
-                          : <span style={{ position: "absolute", left: 2, top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600 }}>{bar.label}</span>;
+                          : <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600, textAlign: "center" }}>{bar.label}</span>;
                       })()}
                     </div>
                     {/* Actual progress green bar */}
