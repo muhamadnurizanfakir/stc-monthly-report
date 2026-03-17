@@ -43,7 +43,7 @@ const BAR_COLORS: Record<string, string> = {
 
 function buildRange(activities: GanttActivity[]) {
   const allDates: number[] = [];
-  function pd(s: string) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
+  function pd(s: string) { const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y,m-1,d,4,0,0)); }
   for (const act of activities) {
     for (const bar of act.gantt_bars ?? []) {
       if (bar.start_date) allDates.push(pd(bar.start_date).getTime());
@@ -96,9 +96,10 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
   const { months, start, totalDays } = useMemo(() => buildRange(activities), [activities]);
 
   function parseDate(dateStr: string) {
-    // Parse as local date to avoid timezone offset issues
+    // Parse as Malaysia time (UTC+8) - treat date string as MYT midnight
     const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    // Create date at noon MYT to avoid any DST/timezone edge cases
+    return new Date(Date.UTC(y, m - 1, d, 4, 0, 0)); // UTC 04:00 = MYT 12:00
   }
   function pct(dateStr: string) {
     const offset = (parseDate(dateStr).getTime() - start.getTime()) / 86400000;
