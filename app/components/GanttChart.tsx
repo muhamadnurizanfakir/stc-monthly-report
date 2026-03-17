@@ -43,13 +43,14 @@ const BAR_COLORS: Record<string, string> = {
 
 function buildRange(activities: GanttActivity[]) {
   const allDates: number[] = [];
+  function pd(s: string) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
   for (const act of activities) {
     for (const bar of act.gantt_bars ?? []) {
-      if (bar.start_date) allDates.push(new Date(bar.start_date).getTime());
-      if (bar.end_date)   allDates.push(new Date(bar.end_date).getTime());
+      if (bar.start_date) allDates.push(pd(bar.start_date).getTime());
+      if (bar.end_date)   allDates.push(pd(bar.end_date).getTime());
     }
     for (const ms of act.gantt_milestones ?? []) {
-      if (ms.milestone_date) allDates.push(new Date(ms.milestone_date).getTime());
+      if (ms.milestone_date) allDates.push(pd(ms.milestone_date).getTime());
     }
   }
   const now = new Date();
@@ -94,13 +95,21 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
 
   const { months, start, totalDays } = useMemo(() => buildRange(activities), [activities]);
 
+  function parseDate(dateStr: string) {
+    // Parse as local date to avoid timezone offset issues
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
   function pct(dateStr: string) {
-    const offset = (new Date(dateStr).getTime() - start.getTime()) / 86400000;
+    const offset = (parseDate(dateStr).getTime() - start.getTime()) / 86400000;
     return Math.max(0, Math.min(100, (offset / totalDays) * 100));
   }
   function bWidth(s: string, e: string) {
-    const sd = Math.max(0, (new Date(s).getTime() - start.getTime()) / 86400000);
-    const ed = Math.min(totalDays, (new Date(e).getTime() - start.getTime()) / 86400000);
+    const sd = Math.max(0, (parseDate(s).getTime() - start.getTime()) / 86400000);
+    // Add 1 day to end date to include the full last day
+    const endDate = parseDate(e);
+    endDate.setDate(endDate.getDate() + 1);
+    const ed = Math.min(totalDays, (endDate.getTime() - start.getTime()) / 86400000);
     return Math.max(0.5, ((ed - sd) / totalDays) * 100);
   }
 
