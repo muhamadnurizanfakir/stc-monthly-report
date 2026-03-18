@@ -209,7 +209,6 @@ export default function ClockPage() {
                         else if (k !== null && pin.length < 4) {
                           const newPin = pin + k.toString();
                           setPin(newPin);
-                          if (newPin.length === 4) setTimeout(() => handlePinSubmit(), 100);
                         }
                       }}
                       className={"h-14 rounded-xl text-lg font-bold transition-all " + (k === null ? "invisible" : k === '⌫' ? "bg-slate-100 text-slate-600 hover:bg-slate-200" : "bg-slate-50 text-slate-800 hover:bg-blue-50 hover:text-blue-700 border border-slate-200")}>
@@ -217,8 +216,12 @@ export default function ClockPage() {
                     </button>
                   ))}
                 </div>
+                <button onClick={handlePinSubmit} disabled={pin.length !== 4}
+                  className="w-full mt-3 py-3 bg-blue-950 text-white rounded-xl font-bold text-sm disabled:opacity-40 transition-colors hover:bg-blue-900">
+                  ✓ Confirm PIN
+                </button>
                 <button onClick={() => { setStep('select_user'); setPin(''); setPinError(''); }}
-                  className="w-full mt-4 text-xs text-slate-400 hover:text-slate-600">← Back</button>
+                  className="w-full mt-2 text-xs text-slate-400 hover:text-slate-600">← Back</button>
               </div>
             </div>
           )}
