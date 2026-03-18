@@ -72,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Login
           </button>
           <p className="text-xs text-slate-400 text-center mt-4">
-            Default password: stc2026
+            
           </p>
         </div>
       </div>
