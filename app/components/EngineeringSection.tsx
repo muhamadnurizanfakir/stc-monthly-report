@@ -7,12 +7,10 @@ import { supabase } from "../lib/supabase";
 
 function EngineeringCard({ project, onRefresh }: { project: EngineeringProject; onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false);
-  const [visible, setVisible] = useState(project.is_visible !== false);
   const items = [...(project.engineering_action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
 
   async function toggleVisibility() {
-    const newVal = !visible;
-    setVisible(newVal);
+    const newVal = !(project.is_visible !== false);
     await supabase.from("engineering_projects").update({ is_visible: newVal }).eq("id", project.id);
     await onRefresh();
   }
@@ -41,8 +39,8 @@ function EngineeringCard({ project, onRefresh }: { project: EngineeringProject; 
         </div>
         <div className="mt-4 flex items-center gap-2">
           <button onClick={toggleVisibility}
-            className={"text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors " + (visible ? "text-green-700 bg-green-50 hover:bg-green-100" : "text-slate-500 bg-slate-100 hover:bg-slate-200")}>
-            {visible ? "👁 Visible" : "🙈 Hidden"}
+            className={"text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors " + (project.is_visible !== false ? "text-green-700 bg-green-50 hover:bg-green-100" : "text-slate-500 bg-slate-100 hover:bg-slate-200")}>
+            {project.is_visible !== false ? "👁 Visible" : "🙈 Hidden"}
           </button>
           <button onClick={() => setExpanded(!expanded)}
             className="text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors">
