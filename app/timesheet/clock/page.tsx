@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface TsUser { id: string; name: string; employee_id: string | null; default_factory: string | null; }
+interface TsUser { id: string; name: string; employee_id: string | null; default_factory: string | null; designation: string | null; hourly_rate: number | null; }
 interface Factory { id: string; code: string; name: string; }
 interface ActiveSession { id: string; factory_code: string; clock_in: string; }
 interface Session {
@@ -72,7 +72,7 @@ export default function ClockPage() {
 
   async function fetchInit() {
     const [{ data: u }, { data: f }] = await Promise.all([
-      supabase.from('ts_users').select('id, name, employee_id, default_factory').eq('is_active', true).order('name'),
+      supabase.from('ts_users').select('id, name, employee_id, default_factory, designation, hourly_rate').eq('is_active', true).order('name'),
       supabase.from('ts_factories').select('*').eq('is_active', true).order('sort_order'),
     ]);
     setUsers(u ?? []); setFactories(f ?? []);
@@ -432,11 +432,11 @@ export default function ClockPage() {
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                   <p className="text-xs text-slate-500">Hourly Rate</p>
-                  <p className="text-2xl font-bold text-slate-800">RM {(selectedUser as {hourly_rate?: number|null}).hourly_rate?.toFixed(2) ?? '—'}</p>
+                  <p className="text-2xl font-bold text-slate-800">{selectedUser.hourly_rate != null ? `RM ${selectedUser.hourly_rate.toFixed(2)}` : '—'}</p>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                   <p className="text-xs text-slate-500">Total Charge</p>
-                  <p className="text-2xl font-bold text-blue-700">RM {(totalH * ((selectedUser as {hourly_rate?: number|null}).hourly_rate ?? 0)).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-blue-700">RM {(totalH * (selectedUser.hourly_rate ?? 0)).toFixed(2)}</p>
                 </div>
               </div>
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -454,7 +454,7 @@ export default function ClockPage() {
                   </thead>
                   <tbody>
                     {factoryStats.filter(f => f.monthH > 0).map((fac, i) => {
-                      const rate = (selectedUser as {hourly_rate?: number|null}).hourly_rate ?? 0;
+                      const rate = selectedUser.hourly_rate ?? 0;
                       const charge = fac.monthH * rate;
                       return (
                         <tr key={fac.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
@@ -469,7 +469,7 @@ export default function ClockPage() {
                       <td className="py-2 px-4 font-bold text-slate-800">TOTAL</td>
                       <td className="py-2 px-4 text-right font-bold font-mono">{totalH.toFixed(1)}h</td>
                       <td className="py-2 px-4"></td>
-                      <td className="py-2 px-4 text-right font-bold text-blue-800">RM {(totalH * ((selectedUser as {hourly_rate?: number|null}).hourly_rate ?? 0)).toFixed(2)}</td>
+                      <td className="py-2 px-4 text-right font-bold text-blue-800">RM {(totalH * (selectedUser.hourly_rate ?? 0)).toFixed(2)}</td>
                     </tr>
                   </tbody>
                 </table>

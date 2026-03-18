@@ -239,7 +239,7 @@ export default function TimesheetDashboard() {
                     {factories.map((fac, i) => {
                       const fs = sessions.filter(s => s.factory_code === fac.code);
                       const totalHrs = fs.reduce((a, s) => a + (s.hours_worked ?? 0), 0);
-                      const totalCharge = fs.reduce((a, s) => a + ((s.hours_worked ?? 0) * ((s as {user_hourly_rate?: number}).user_hourly_rate ?? 0)), 0);
+                      const totalCharge = fs.reduce((a, s) => a + ((s.hours_worked ?? 0) * ((s.ts_users as {hourly_rate?: number|null}|undefined)?.hourly_rate ?? 0)), 0);
                       return (
                         <tr key={fac.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                           <td className="py-2 px-4">
@@ -254,7 +254,7 @@ export default function TimesheetDashboard() {
                     <tr className="bg-blue-50 border-t-2 border-blue-200">
                       <td className="py-2 px-4 font-bold text-slate-800">TOTAL</td>
                       <td className="py-2 px-4 text-right font-bold font-mono text-slate-800">{sessions.reduce((a, s) => a + (s.hours_worked ?? 0), 0).toFixed(1)}h</td>
-                      <td className="py-2 px-4 text-right font-bold text-blue-800">RM {sessions.reduce((a, s) => a + ((s.hours_worked ?? 0) * ((s as {user_hourly_rate?: number}).user_hourly_rate ?? 0)), 0).toFixed(2)}</td>
+                      <td className="py-2 px-4 text-right font-bold text-blue-800">RM {sessions.reduce((a, s) => a + ((s.hours_worked ?? 0) * ((s.ts_users as {hourly_rate?: number|null}|undefined)?.hourly_rate ?? 0)), 0).toFixed(2)}</td>
                     </tr>
                   </tbody>
                 </table>
