@@ -12,7 +12,7 @@ interface Session {
 }
 
 type Step = 'select_user' | 'enter_pin';
-type Nav = 'timer' | 'overview' | 'history';
+type Nav = 'timer' | 'overview' | 'history' | 'calculation';
 
 const FACTORY_COLORS: Record<string, string> = {
   STCSB: '#1e3a8a', SMCSB: '#0e7490', AASSB: '#b45309',
@@ -257,6 +257,7 @@ export default function ClockPage() {
             { id: 'timer', label: 'Timer', icon: '⏱️' },
             { id: 'overview', label: 'Overview', icon: '📊' },
             { id: 'history', label: 'Session History', icon: '📋' },
+            { id: 'calculation', label: 'Calculation', icon: '💰' },
           ] as { id: Nav; label: string; icon: string }[]).map(item => (
             <button key={item.id} onClick={() => setNav(item.id)}
               className={"w-full flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors " + (nav === item.id ? "bg-orange-500 text-white" : "text-blue-300 hover:text-white hover:bg-blue-900")}>
@@ -414,6 +415,64 @@ export default function ClockPage() {
                     </tbody>
                   </table>
                 )}
+              </div>
+            </div>
+          )}
+          {/* CALCULATION */}
+          {nav === 'calculation' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-xl font-bold text-slate-800">My Charges</h1>
+                <p className="text-xs text-slate-500">{selectedMonth}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs text-slate-500">Total Hours</p>
+                  <p className="text-2xl font-bold text-slate-800">{totalH.toFixed(1)}h</p>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs text-slate-500">Hourly Rate</p>
+                  <p className="text-2xl font-bold text-slate-800">RM {(selectedUser as {hourly_rate?: number|null}).hourly_rate?.toFixed(2) ?? '—'}</p>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs text-slate-500">Total Charge</p>
+                  <p className="text-2xl font-bold text-blue-700">RM {(totalH * ((selectedUser as {hourly_rate?: number|null}).hourly_rate ?? 0)).toFixed(2)}</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-700">Charge by Factory</h3>
+                </div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="text-left py-2 px-4 font-semibold text-slate-500">Factory</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Hours</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Rate (RM/hr)</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Charge (RM)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {factoryStats.filter(f => f.monthH > 0).map((fac, i) => {
+                      const rate = (selectedUser as {hourly_rate?: number|null}).hourly_rate ?? 0;
+                      const charge = fac.monthH * rate;
+                      return (
+                        <tr key={fac.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                          <td className="py-2 px-4"><span className="px-2 py-0.5 rounded text-white text-xs font-semibold mr-2" style={{ background: fac.color }}>{fac.code}</span>{fac.name}</td>
+                          <td className="py-2 px-4 text-right font-mono text-slate-600">{fac.monthH.toFixed(1)}h</td>
+                          <td className="py-2 px-4 text-right font-mono text-slate-600">RM {rate.toFixed(2)}</td>
+                          <td className="py-2 px-4 text-right font-semibold text-blue-700">RM {charge.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-blue-50 border-t-2 border-blue-200">
+                      <td className="py-2 px-4 font-bold text-slate-800">TOTAL</td>
+                      <td className="py-2 px-4 text-right font-bold font-mono">{totalH.toFixed(1)}h</td>
+                      <td className="py-2 px-4"></td>
+                      <td className="py-2 px-4 text-right font-bold text-blue-800">RM {(totalH * ((selectedUser as {hourly_rate?: number|null}).hourly_rate ?? 0)).toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

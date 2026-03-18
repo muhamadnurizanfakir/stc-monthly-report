@@ -21,7 +21,7 @@ function getColor(code: string, idx: number) {
   return FACTORY_COLORS[code] ?? FALLBACKS[idx % FALLBACKS.length];
 }
 
-type NavItem = 'overview' | 'sessions';
+type NavItem = 'overview' | 'sessions' | 'calculation';
 
 export default function TimesheetDashboard() {
   const [factories, setFactories] = useState<Factory[]>([]);
@@ -40,7 +40,7 @@ export default function TimesheetDashboard() {
     setLoading(true);
     const [{ data: fac }, { data: ses }] = await Promise.all([
       supabase.from('ts_factories').select('*').eq('is_active', true).order('sort_order'),
-      supabase.from('ts_sessions').select('*, ts_users(name, employee_id)')
+      supabase.from('ts_sessions').select('*, ts_users(name, employee_id, designation, hourly_rate)')
         .gte('date', selectedMonth + '-01')
         .lte('date', selectedMonth + '-31')
         .order('clock_in', { ascending: false }),
@@ -119,6 +119,7 @@ export default function TimesheetDashboard() {
           {[
             { id: 'overview', label: 'Overview', icon: '📊' },
             { id: 'sessions', label: 'Session History', icon: '📋' },
+            { id: 'calculation', label: 'Calculation', icon: '💰' },
           ].map(item => (
             <button key={item.id} onClick={() => setNav(item.id as NavItem)}
               className={"w-full flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors " + (nav === item.id ? "bg-orange-500 text-white" : "text-blue-300 hover:text-white hover:bg-blue-900")}>
@@ -208,6 +209,92 @@ export default function TimesheetDashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* CALCULATION */}
+          {nav === 'calculation' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-xl font-bold text-slate-800">Monthly Charges</h1>
+                <p className="text-xs text-slate-500">Based on hourly rates × hours worked</p>
+              </div>
+
+              {/* Summary by Factory */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-700">Charge Summary by Factory</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">{selectedMonth}</p>
+                </div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="text-left py-2 px-4 font-semibold text-slate-500">Factory</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Total Hours</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Total Charge (RM)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {factories.map((fac, i) => {
+                      const fs = sessions.filter(s => s.factory_code === fac.code);
+                      const totalHrs = fs.reduce((a, s) => a + (s.hours_worked ?? 0), 0);
+                      const totalCharge = fs.reduce((a, s) => a + ((s.hours_worked ?? 0) * ((s as {user_hourly_rate?: number}).user_hourly_rate ?? 0)), 0);
+                      return (
+                        <tr key={fac.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                          <td className="py-2 px-4">
+                            <span className="px-2 py-0.5 rounded text-white text-xs font-semibold" style={{ background: getColor(fac.code, i) }}>{fac.code}</span>
+                            <span className="ml-2 text-slate-600">{fac.name}</span>
+                          </td>
+                          <td className="py-2 px-4 text-right font-mono text-slate-700">{totalHrs.toFixed(1)}h</td>
+                          <td className="py-2 px-4 text-right font-semibold text-blue-700">RM {totalCharge.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-blue-50 border-t-2 border-blue-200">
+                      <td className="py-2 px-4 font-bold text-slate-800">TOTAL</td>
+                      <td className="py-2 px-4 text-right font-bold font-mono text-slate-800">{sessions.reduce((a, s) => a + (s.hours_worked ?? 0), 0).toFixed(1)}h</td>
+                      <td className="py-2 px-4 text-right font-bold text-blue-800">RM {sessions.reduce((a, s) => a + ((s.hours_worked ?? 0) * ((s as {user_hourly_rate?: number}).user_hourly_rate ?? 0)), 0).toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Detail by Engineer */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-700">Charge Detail by Engineer</h3>
+                </div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="text-left py-2 px-4 font-semibold text-slate-500">Engineer</th>
+                      <th className="text-left py-2 px-4 font-semibold text-slate-500">Designation</th>
+                      <th className="text-left py-2 px-4 font-semibold text-slate-500">Factory</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Rate (RM/hr)</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Hours</th>
+                      <th className="text-right py-2 px-4 font-semibold text-slate-500">Charge (RM)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sessions.filter(s => s.hours_worked).map((s, i) => {
+                      const user = s.ts_users as {name:string; employee_id:string|null; designation?:string; hourly_rate?:number}|undefined;
+                      const rate = user?.hourly_rate ?? 0;
+                      const charge = (s.hours_worked ?? 0) * rate;
+                      const color = getColor(s.factory_code, 0);
+                      return (
+                        <tr key={s.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                          <td className="py-2 px-4 font-semibold text-slate-800">{user?.name ?? '—'}</td>
+                          <td className="py-2 px-4 text-slate-500">{user?.designation ?? '—'}</td>
+                          <td className="py-2 px-4"><span className="px-2 py-0.5 rounded text-white text-xs font-semibold" style={{ background: color }}>{s.factory_code}</span></td>
+                          <td className="py-2 px-4 text-right font-mono text-slate-600">{rate > 0 ? `RM ${rate.toFixed(2)}` : '—'}</td>
+                          <td className="py-2 px-4 text-right font-mono text-slate-600">{s.hours_worked}h</td>
+                          <td className="py-2 px-4 text-right font-semibold text-blue-700">{charge > 0 ? `RM ${charge.toFixed(2)}` : '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
