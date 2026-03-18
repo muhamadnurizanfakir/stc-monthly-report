@@ -57,7 +57,10 @@ export default function ClockPage() {
 
   useEffect(() => {
     if (!activeSession) return;
+    // Set immediately so no 1-second delay
+    setElapsed(Math.floor((Date.now() - new Date(activeSession.clock_in).getTime()) / 1000));
     const interval = setInterval(() => {
+      // Always recalculate from DB timestamp - works after reconnect/reopen
       setElapsed(Math.floor((Date.now() - new Date(activeSession.clock_in).getTime()) / 1000));
     }, 1000);
     return () => clearInterval(interval);
@@ -100,7 +103,7 @@ export default function ClockPage() {
     if (!activeSession || !selectedUser) return;
     setSaving(true);
     const now = new Date().toISOString();
-    const hours = parseFloat((elapsed / 3600).toFixed(2));
+    const hours = parseFloat(((Date.now() - new Date(activeSession.clock_in).getTime()) / 3600000).toFixed(2));
     await supabase.from('ts_sessions').update({
       clock_out: now,
       hours_worked: hours,
