@@ -51,15 +51,15 @@ export default function TimesheetDashboard() {
   async function generateAllInvoices() {
     setGenerating('all');
     try {
-      const { generateFactoryInvoice } = await import('./invoiceGenerator');
+      const { generateAllFactoryInvoices } = await import('./invoiceGenerator');
+      const allData = [];
       for (const fac of factories) {
         const res = await fetch(`/api/invoice?period=${selectedMonth}&factory=${fac.code}`);
         const data = await res.json();
-        if (data.sessions?.length > 0) {
-          await generateFactoryInvoice(data.stc, data.factory, data.sessions, selectedMonth);
-          await new Promise(r => setTimeout(r, 500));
-        }
+        if (data.sessions?.length > 0) allData.push({ factory: data.factory, sessions: data.sessions, stc: data.stc });
       }
+      if (allData.length === 0) { alert('No sessions found for any factory this month.'); setGenerating(null); return; }
+      await generateAllFactoryInvoices(allData[0].stc, allData, selectedMonth);
     } catch { alert('Error generating invoices'); }
     setGenerating(null);
   }

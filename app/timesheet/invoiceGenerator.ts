@@ -325,3 +325,158 @@ export async function generateIndividualReport(stc: Factory, user: User & { id: 
 
   doc.save('Contribution_' + user.name.replace(/ /g, '_') + '_' + period + '.pdf');
 }
+
+export async function generateAllFactoryInvoices(stc: Factory, factoriesData: { factory: Factory; sessions: Session[] }[], period: string) {
+  const [y, m] = period.split('-');
+  const monthName = new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString('en-MY', { month: 'long', year: 'numeric' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = 210;
+  const margin = 15;
+
+  // Load logo once
+  let logoImg: HTMLImageElement | null = null;
+  try {
+    const img = new Image();
+    img.src = '/SIB_Logo.png';
+    await new Promise(r => { img.onload = r; img.onerror = r; });
+    logoImg = img;
+  } catch {}
+
+  let isFirst = true;
+
+  for (const { factory, sessions } of factoriesData) {
+    if (sessions.length === 0) continue;
+    if (!isFirst) doc.addPage();
+    isFirst = false;
+
+    // Logo
+    if (logoImg) doc.addImage(logoImg, 'PNG', margin, 10, 30, 20);
+
+    // Header
+    doc.setFontSize(8);
+    doc.setTextColor(60, 60, 60);
+    const headerX = margin + 33;
+    const maxW = pageW - headerX - margin;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sapura Technical Centre Sdn. Bhd (' + (stc?.registration_no ?? '277264-H') + ')', headerX, 13);
+    doc.setFont('helvetica', 'normal');
+    const addr = stc?.address ?? 'No. 11, Jalan P/1, Seksyen 13, Kawasan Perindustrian Bangi, 43650 Bandar Baru Bangi, Selangor Darul Ehsan Malaysia';
+    const addrLines = doc.splitTextToSize(addr, maxW);
+    doc.text(addrLines, headerX, 17);
+    const afterAddr = 17 + addrLines.length * 4;
+    doc.text('Tel: ' + (stc?.phone ?? '+603 8926 3610') + '  |  Website: www.sapuraindustrial.com.my', headerX, afterAddr);
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, 33, pageW - margin, 33);
+
+    // INVOICE title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 58, 138);
+    doc.text('INVOICE', margin, 42);
+
+    // Invoice details
+    const invNo = getInvoiceNo('INV', period);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('TO:', margin, 52);
+    doc.setFont('helvetica', 'normal');
+    doc.text(factory.name + (factory.registration_no ? ' (' + factory.registration_no + ')' : ''), margin, 57);
+    if (factory.address) {
+      const fAddrLines = doc.splitTextToSize(factory.address, 80);
+      doc.text(fAddrLines, margin, 61);
+    }
+    if (factory.phone) doc.text('Tel: ' + factory.phone, margin, 72);
+
+    const rightX = 130;
+    const infoData = [
+      ['Invoice No', ': ' + invNo],
+      ['Invoice Date', ': ' + new Date().toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' })],
+      ['Period', ': ' + monthName],
+      ['Payment Terms', ': ' + (stc?.payment_terms ?? '30 days')],
+    ];
+    let ry = 52;
+    infoData.forEach(([label, val]) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, rightX, ry);
+      doc.setFont('helvetica', 'normal');
+      doc.text(val, rightX + 28, ry);
+      ry += 5;
+    });
+
+    // Table
+    const tableData = sessions.map(s => {
+      const user = s.ts_users;
+      const rate = user?.hourly_rate ?? 0;
+      const hrs = s.hours_worked ?? 0;
+      return [
+        formatDate(s.date),
+        user?.name ?? '—',
+        user?.designation ?? '—',
+        formatTime(s.clock_in) + ' - ' + (s.clock_out ? formatTime(s.clock_out) : '—'),
+        hrs.toFixed(2),
+        'RM ' + rate.toFixed(2),
+        'RM ' + (hrs * rate).toFixed(2),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 82,
+      head: [['Date', 'Engineer', 'Designation', 'Time', 'Hours', 'Rate/hr', 'Amount (RM)']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [30, 58, 138], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 22 }, 1: { cellWidth: 35 }, 2: { cellWidth: 28 },
+        3: { cellWidth: 30 }, 4: { cellWidth: 15, halign: 'right' },
+        5: { cellWidth: 22, halign: 'right' }, 6: { cellWidth: 25, halign: 'right' },
+      },
+      margin: { left: margin, right: margin },
+    });
+
+    const subtotal = sessions.reduce((a, s) => a + (s.hours_worked ?? 0) * (s.ts_users?.hourly_rate ?? 0), 0);
+    const sstRate = stc?.sst_rate ?? 0;
+    const sstAmt = subtotal * (sstRate / 100);
+    const total = subtotal + sstAmt;
+    const finalY = (doc as unknown as {lastAutoTable: {finalY: number}}).lastAutoTable.finalY + 5;
+
+    const totX = pageW - margin - 60;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    doc.text('Subtotal:', totX, finalY);
+    doc.text('RM ' + subtotal.toFixed(2), pageW - margin, finalY, { align: 'right' });
+    doc.text('SST (' + sstRate + '%):', totX, finalY + 5);
+    doc.text('RM ' + sstAmt.toFixed(2), pageW - margin, finalY + 5, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(30, 58, 138);
+    doc.text('TOTAL:', totX, finalY + 12);
+    doc.text('RM ' + total.toFixed(2), pageW - margin, finalY + 12, { align: 'right' });
+
+    // Bank details
+    const bankY = finalY + 22;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(60, 60, 60);
+    doc.text('Payment Details:', margin, bankY);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Bank: ' + (stc?.bank_name ?? '—'), margin, bankY + 5);
+    doc.text('Account No: ' + (stc?.bank_account ?? '—'), margin, bankY + 9);
+    doc.text('Account Name: ' + (stc?.bank_account_name ?? '—'), margin, bankY + 13);
+
+    // Footer
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, 275, pageW - margin, 275);
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.setFont('helvetica', 'normal');
+    doc.text('This is a computer generated invoice. ' + stc?.name + ' (' + (stc?.registration_no ?? '') + ')', pageW / 2, 279, { align: 'center' });
+  }
+
+  doc.save('Invoices_All_' + period + '.pdf');
+}
