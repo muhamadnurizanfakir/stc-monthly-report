@@ -151,9 +151,9 @@ export default function TimesheetDashboard() {
               </div>
 
               {/* Big pie left + factory cards right */}
-              <div className="flex flex-col gap-6">
+              <div className="flex gap-6 items-start">
                 {/* Pie Chart */}
-                <div className="bg-white rounded-xl border border-slate-200 p-5 flex gap-8 items-center">
+                <div className="bg-white rounded-xl border border-slate-200 p-5 flex gap-8 items-center shrink-0">
                   <div className="shrink-0 w-96">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Hours Distribution</p>
                   {pieData.length > 0 ? (
