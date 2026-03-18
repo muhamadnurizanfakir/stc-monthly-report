@@ -35,6 +35,7 @@ export default function ClockPage() {
   const [elapsed, setElapsed] = useState(0);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -114,6 +115,17 @@ export default function ClockPage() {
   function formatElapsed(sec: number) {
     const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  async function generateMyReport() {
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/invoice?period=${selectedMonth}&user=${selectedUser!.id}`);
+      const data = await res.json();
+      const { generateIndividualReport } = await import('../invoiceGenerator');
+      await generateIndividualReport(data.stc, { ...selectedUser!, id: selectedUser!.id }, data.sessions, selectedMonth);
+    } catch { alert('Error generating report'); }
+    setGenerating(false);
   }
 
   function logout() {
@@ -423,7 +435,13 @@ export default function ClockPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-xl font-bold text-slate-800">My Charges</h1>
-                <p className="text-xs text-slate-500">{selectedMonth}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-slate-500">{selectedMonth}</p>
+                  <button onClick={generateMyReport} disabled={generating}
+                    className="px-3 py-1.5 bg-blue-950 hover:bg-blue-900 text-white rounded-lg text-xs font-semibold disabled:opacity-50">
+                    {generating ? '⏳ Generating...' : '📄 Download Report'}
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="bg-white rounded-xl border border-slate-200 p-4">

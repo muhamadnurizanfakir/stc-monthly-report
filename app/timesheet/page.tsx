@@ -28,6 +28,7 @@ export default function TimesheetDashboard() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [nav, setNav] = useState<NavItem>('overview');
+  const [generating, setGenerating] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -35,6 +36,33 @@ export default function TimesheetDashboard() {
   const [filterUser, setFilterUser] = useState('');
 
   useEffect(() => { fetchData(); }, [selectedMonth]);
+
+  async function generateInvoice(factoryCode: string) {
+    setGenerating(factoryCode);
+    try {
+      const res = await fetch(`/api/invoice?period=${selectedMonth}&factory=${factoryCode}`);
+      const data = await res.json();
+      const { generateFactoryInvoice } = await import('./invoiceGenerator');
+      await generateFactoryInvoice(data.stc, data.factory, data.sessions, selectedMonth);
+    } catch { alert('Error generating invoice'); }
+    setGenerating(null);
+  }
+
+  async function generateAllInvoices() {
+    setGenerating('all');
+    try {
+      const { generateFactoryInvoice } = await import('./invoiceGenerator');
+      for (const fac of factories) {
+        const res = await fetch(`/api/invoice?period=${selectedMonth}&factory=${fac.code}`);
+        const data = await res.json();
+        if (data.sessions?.length > 0) {
+          await generateFactoryInvoice(data.stc, data.factory, data.sessions, selectedMonth);
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
+    } catch { alert('Error generating invoices'); }
+    setGenerating(null);
+  }
 
   async function fetchData() {
     setLoading(true);
@@ -218,7 +246,13 @@ export default function TimesheetDashboard() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-xl font-bold text-slate-800">Monthly Charges</h1>
-                <p className="text-xs text-slate-500">Based on hourly rates × hours worked</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-slate-500 mr-2">Based on hourly rates × hours worked</p>
+                  <button onClick={generateAllInvoices} disabled={generating !== null}
+                    className="px-3 py-1.5 bg-blue-950 hover:bg-blue-900 text-white rounded-lg text-xs font-semibold disabled:opacity-50 transition-colors">
+                    {generating === 'all' ? '⏳ Generating...' : '📄 Generate All Invoices'}
+                  </button>
+                </div>
               </div>
 
               {/* Summary by Factory */}
@@ -248,6 +282,14 @@ export default function TimesheetDashboard() {
                           </td>
                           <td className="py-2 px-4 text-right font-mono text-slate-700">{totalHrs.toFixed(1)}h</td>
                           <td className="py-2 px-4 text-right font-semibold text-blue-700">RM {totalCharge.toFixed(2)}</td>
+                          <td className="py-2 px-4 text-right">
+                            {totalHrs > 0 && (
+                              <button onClick={() => generateInvoice(fac.code)} disabled={generating !== null}
+                                className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100 disabled:opacity-50">
+                                {generating === fac.code ? '⏳' : '📄'}
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
