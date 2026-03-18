@@ -154,13 +154,13 @@ export default function TimesheetDashboard() {
               <div className="flex flex-col gap-6">
                 {/* Pie Chart */}
                 <div className="bg-white rounded-xl border border-slate-200 p-5 flex gap-8 items-center">
-                  <div className="shrink-0 w-72">
+                  <div className="shrink-0 w-96">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Hours Distribution</p>
                   {pieData.length > 0 ? (
                     <>
-                      <ResponsiveContainer width="100%" height={280}>
+                      <ResponsiveContainer width="100%" height={360}>
                         <PieChart>
-                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={120} dataKey="value" labelLine={false} label={renderLabel}>
+                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={160} dataKey="value" labelLine={false} label={renderLabel}>
                             {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                           </Pie>
                           <Tooltip formatter={(value) => [`${value}h (${totalMonthH > 0 ? Math.round((Number(value)/totalMonthH)*100) : 0}%)`, 'Hours']} contentStyle={{ fontSize: 11 }} />
