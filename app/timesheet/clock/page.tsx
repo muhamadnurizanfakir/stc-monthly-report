@@ -334,12 +334,12 @@ export default function ClockPage() {
               <div className="flex gap-6 items-start">
                 {/* Pie */}
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shrink-0 w-96 flex gap-6 items-center">
-                  <div className="shrink-0 w-56">
+                  <div className="shrink-0 w-96">
                   {pieData.length > 0 ? (
                     <>
-                      <ResponsiveContainer width="100%" height={280}>
+                      <ResponsiveContainer width="100%" height={360}>
                         <PieChart>
-                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={120} dataKey="value" labelLine={false} label={renderLabel}>
+                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={160} dataKey="value" labelLine={false} label={renderLabel}>
                             {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                           </Pie>
                           <Tooltip formatter={(value) => [`${value}h`, 'Hours']} contentStyle={{ fontSize: 11 }} />
@@ -354,7 +354,7 @@ export default function ClockPage() {
                 </div>
                 {/* Factory Cards */}
                 <div className="flex-1 grid grid-cols-2 gap-4 content-start self-start">
-                  {factoryStats.filter(f => f.monthH > 0 || f.todayH > 0).map(fac => (
+                  {factoryStats.map(fac => (
                     <div key={fac.id} className="bg-white rounded-xl border border-slate-200 p-4">
                       <div className="px-2 py-1 rounded text-xs font-bold text-white inline-block mb-2" style={{ background: fac.color }}>{fac.code}</div>
                       <p className="text-xs font-semibold text-slate-600 mb-3 leading-tight">{fac.name}</p>
