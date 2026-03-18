@@ -350,22 +350,7 @@ export default function ClockPage() {
                     <div className="h-64 flex items-center justify-center text-slate-400 text-sm">No data this month</div>
                   )}
                   </div>
-                  {/* Legend */}
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Hours by Factory</p>
-                    <div className="space-y-3">
-                      {pieData.map(d => (
-                        <div key={d.name}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm shrink-0" style={{ background: d.color }}></span><span className="text-sm font-semibold text-slate-700">{d.name}</span></div>
-                            <span className="text-sm text-slate-500">{d.value}h · {totalH > 0 ? Math.round((d.value/totalH)*100) : 0}%</span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${totalH > 0 ? (d.value/totalH)*100 : 0}%`, background: d.color }} /></div>
-                        </div>
-                      ))}
-                      <div className="pt-2 border-t border-slate-100 flex justify-between text-sm font-bold text-slate-700"><span>Total</span><span>{totalH.toFixed(1)}h</span></div>
-                    </div>
-                  </div>
+
                 </div>
                 {/* Factory Cards */}
                 <div className="flex-1 grid grid-cols-2 gap-4 content-start self-start">
