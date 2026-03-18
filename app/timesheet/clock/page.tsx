@@ -331,41 +331,44 @@ export default function ClockPage() {
                 <h1 className="text-xl font-bold text-slate-800">My Overview</h1>
                 <p className="text-xs text-slate-500">{totalH.toFixed(1)}h this month</p>
               </div>
-              <div className="flex gap-6">
+              <div className="flex gap-6 items-start">
                 {/* Pie */}
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shrink-0 w-64 flex flex-col items-center">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 self-start">Hours by Factory</p>
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shrink-0 w-96 flex gap-6 items-center">
+                  <div className="shrink-0 w-56">
                   {pieData.length > 0 ? (
                     <>
-                      <ResponsiveContainer width="100%" height={200}>
+                      <ResponsiveContainer width="100%" height={280}>
                         <PieChart>
-                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={85} dataKey="value" labelLine={false} label={renderLabel}>
+                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={120} dataKey="value" labelLine={false} label={renderLabel}>
                             {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                           </Pie>
                           <Tooltip formatter={(value) => [`${value}h`, 'Hours']} contentStyle={{ fontSize: 11 }} />
                         </PieChart>
                       </ResponsiveContainer>
-                      <div className="w-full mt-2 space-y-1.5">
-                        {pieData.map(d => (
-                          <div key={d.name} className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.color }}></span>
-                              <span className="font-semibold text-slate-700">{d.name}</span>
-                            </div>
-                            <span className="text-slate-500">{d.value}h · {totalH > 0 ? Math.round((d.value/totalH)*100) : 0}%</span>
-                          </div>
-                        ))}
-                        <div className="pt-1 border-t border-slate-100 flex justify-between text-xs font-bold text-slate-700">
-                          <span>Total</span><span>{totalH.toFixed(1)}h</span>
-                        </div>
-                      </div>
                     </>
                   ) : (
-                    <div className="py-12 text-slate-400 text-sm text-center">No data this month</div>
+                    <div className="h-64 flex items-center justify-center text-slate-400 text-sm">No data this month</div>
                   )}
+                  </div>
+                  {/* Legend */}
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Hours by Factory</p>
+                    <div className="space-y-3">
+                      {pieData.map(d => (
+                        <div key={d.name}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm shrink-0" style={{ background: d.color }}></span><span className="text-sm font-semibold text-slate-700">{d.name}</span></div>
+                            <span className="text-sm text-slate-500">{d.value}h · {totalH > 0 ? Math.round((d.value/totalH)*100) : 0}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2"><div className="h-2 rounded-full" style={{ width: `${totalH > 0 ? (d.value/totalH)*100 : 0}%`, background: d.color }} /></div>
+                        </div>
+                      ))}
+                      <div className="pt-2 border-t border-slate-100 flex justify-between text-sm font-bold text-slate-700"><span>Total</span><span>{totalH.toFixed(1)}h</span></div>
+                    </div>
+                  </div>
                 </div>
                 {/* Factory Cards */}
-                <div className="flex-1 grid grid-cols-2 gap-4 content-start">
+                <div className="flex-1 grid grid-cols-2 gap-4 content-start self-start">
                   {factoryStats.filter(f => f.monthH > 0 || f.todayH > 0).map(fac => (
                     <div key={fac.id} className="bg-white rounded-xl border border-slate-200 p-4">
                       <div className="px-2 py-1 rounded text-xs font-bold text-white inline-block mb-2" style={{ background: fac.color }}>{fac.code}</div>
