@@ -150,77 +150,75 @@ export default function TimesheetDashboard() {
                 <p className="text-xs text-slate-500">{activeSessions.length} currently clocked in · {totalMonthH.toFixed(1)}h this month</p>
               </div>
 
-              {/* Pie Chart + Legend */}
-              {pieData.length > 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 flex items-center gap-6">
-                  <div className="w-64 h-64 shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={pieData} cx="50%" cy="50%" outerRadius={110} dataKey="value" labelLine={false} label={renderLabel}>
-                          {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                        </Pie>
-                        <Tooltip formatter={(value) => [`${value}h (${totalMonthH > 0 ? Math.round((Number(value)/totalMonthH)*100) : 0}%)`, 'Hours']} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Hours by Factory</p>
-                    <div className="space-y-2">
-                      {pieData.map(d => (
-                        <div key={d.name} className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: d.color }}></span>
-                          <span className="text-sm font-semibold text-slate-700 w-20">{d.name}</span>
-                          <div className="flex-1 bg-slate-100 rounded-full h-2">
-                            <div className="h-2 rounded-full" style={{ width: `${totalMonthH > 0 ? (d.value/totalMonthH)*100 : 0}%`, background: d.color }} />
+              {/* Big pie left + factory cards right */}
+              <div className="flex gap-6">
+                {/* Pie Chart */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shrink-0 w-72 flex flex-col items-center">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 self-start">Hours Distribution</p>
+                  {pieData.length > 0 ? (
+                    <>
+                      <ResponsiveContainer width="100%" height={240}>
+                        <PieChart>
+                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={105} dataKey="value" labelLine={false} label={renderLabel}>
+                            {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`${value}h (${totalMonthH > 0 ? Math.round((Number(value)/totalMonthH)*100) : 0}%)`, 'Hours']} contentStyle={{ fontSize: 11 }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="w-full mt-2 space-y-1.5">
+                        {pieData.map(d => (
+                          <div key={d.name} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.color }}></span>
+                              <span className="font-semibold text-slate-700">{d.name}</span>
+                            </div>
+                            <span className="text-slate-500">{d.value}h · {totalMonthH > 0 ? Math.round((d.value/totalMonthH)*100) : 0}%</span>
                           </div>
-                          <span className="text-xs text-slate-500 w-16 text-right">{d.value}h ({totalMonthH > 0 ? Math.round((d.value/totalMonthH)*100) : 0}%)</span>
+                        ))}
+                        <div className="pt-1 border-t border-slate-100 flex justify-between text-xs font-bold text-slate-700">
+                          <span>Total</span><span>{totalMonthH.toFixed(1)}h</span>
                         </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-slate-100">
-                      <p className="text-xs text-slate-500">Total: <span className="font-bold text-slate-800">{totalMonthH.toFixed(1)}h</span> this month</p>
-                    </div>
-                  </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-slate-400 text-sm py-16">No data yet</div>
+                  )}
                 </div>
-              ) : (
-                <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 text-center text-slate-400 text-sm">No sessions recorded this month yet.</div>
-              )}
 
-              {/* Factory Cards Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                {factoryStats.map(fac => (
-                  <div key={fac.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="px-2 py-1 rounded text-xs font-bold text-white" style={{ background: fac.color }}>{fac.code}</div>
+                {/* Factory Cards Grid */}
+                <div className="flex-1 grid grid-cols-2 xl:grid-cols-3 gap-4 content-start">
+                  {factoryStats.map(fac => (
+                    <div key={fac.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="px-2 py-1 rounded text-xs font-bold text-white" style={{ background: fac.color }}>{fac.code}</div>
+                        {fac.active.length > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block"></span>
+                            {fac.active.length} active
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-slate-600 mb-3 leading-tight">{fac.name}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <p className="text-xs text-slate-400">Today</p>
+                          <p className="text-base font-bold text-slate-800">{fac.todayH.toFixed(1)}<span className="text-xs font-normal text-slate-400">h</span></p>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <p className="text-xs text-slate-400">Month</p>
+                          <p className="text-base font-bold text-slate-800">{fac.monthH.toFixed(1)}<span className="text-xs font-normal text-slate-400">h</span></p>
+                        </div>
+                      </div>
                       {fac.active.length > 0 && (
-                        <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block"></span>
-                          {fac.active.length}
-                        </span>
+                        <div className="mt-2 pt-2 border-t border-slate-100">
+                          {fac.active.map(s => (
+                            <p key={s.id} className="text-xs text-green-600 truncate">🟢 {(s.ts_users as {name:string}|undefined)?.name ?? 'Unknown'}</p>
+                          ))}
+                        </div>
                       )}
                     </div>
-                    <p className="text-xs font-semibold text-slate-600 mb-3 leading-tight">{fac.name}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-slate-50 rounded-lg p-2">
-                        <p className="text-xs text-slate-400">Today</p>
-                        <p className="text-base font-bold text-slate-800">{fac.todayH.toFixed(1)}<span className="text-xs font-normal text-slate-400">h</span></p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-2">
-                        <p className="text-xs text-slate-400">Month</p>
-                        <p className="text-base font-bold text-slate-800">{fac.monthH.toFixed(1)}<span className="text-xs font-normal text-slate-400">h</span></p>
-                      </div>
-                    </div>
-                    {fac.active.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-100">
-                        {fac.active.map(s => (
-                          <p key={s.id} className="text-xs text-green-600 truncate">
-                            🟢 {(s.ts_users as {name:string}|undefined)?.name ?? 'Unknown'}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
