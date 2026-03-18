@@ -151,38 +151,49 @@ export default function TimesheetDashboard() {
               </div>
 
               {/* Big pie left + factory cards right */}
-              <div className="flex gap-6">
+              <div className="flex flex-col gap-6">
                 {/* Pie Chart */}
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shrink-0 w-72 flex flex-col items-center">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 self-start">Hours Distribution</p>
+                <div className="bg-white rounded-xl border border-slate-200 p-5 flex gap-8 items-center">
+                  <div className="shrink-0 w-72">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Hours Distribution</p>
                   {pieData.length > 0 ? (
                     <>
-                      <ResponsiveContainer width="100%" height={240}>
+                      <ResponsiveContainer width="100%" height={280}>
                         <PieChart>
-                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={105} dataKey="value" labelLine={false} label={renderLabel}>
+                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={120} dataKey="value" labelLine={false} label={renderLabel}>
                             {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                           </Pie>
                           <Tooltip formatter={(value) => [`${value}h (${totalMonthH > 0 ? Math.round((Number(value)/totalMonthH)*100) : 0}%)`, 'Hours']} contentStyle={{ fontSize: 11 }} />
                         </PieChart>
                       </ResponsiveContainer>
-                      <div className="w-full mt-2 space-y-1.5">
-                        {pieData.map(d => (
-                          <div key={d.name} className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.color }}></span>
-                              <span className="font-semibold text-slate-700">{d.name}</span>
-                            </div>
-                            <span className="text-slate-500">{d.value}h · {totalMonthH > 0 ? Math.round((d.value/totalMonthH)*100) : 0}%</span>
-                          </div>
-                        ))}
-                        <div className="pt-1 border-t border-slate-100 flex justify-between text-xs font-bold text-slate-700">
-                          <span>Total</span><span>{totalMonthH.toFixed(1)}h</span>
-                        </div>
-                      </div>
                     </>
                   ) : (
-                    <div className="flex-1 flex items-center justify-center text-slate-400 text-sm py-16">No data yet</div>
+                    <div className="h-72 flex items-center justify-center text-slate-400 text-sm">No data yet</div>
                   )}
+                  </div>
+                  {/* Legend on right */}
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Hours by Factory</p>
+                    <div className="space-y-3">
+                      {pieData.map(d => (
+                        <div key={d.name}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: d.color }}></span>
+                              <span className="text-sm font-semibold text-slate-700">{d.name}</span>
+                            </div>
+                            <span className="text-sm text-slate-500">{d.value}h · {totalMonthH > 0 ? Math.round((d.value/totalMonthH)*100) : 0}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div className="h-2 rounded-full" style={{ width: `${totalMonthH > 0 ? (d.value/totalMonthH)*100 : 0}%`, background: d.color }} />
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-2 border-t border-slate-100 flex justify-between text-sm font-bold text-slate-700">
+                        <span>Total</span><span>{totalMonthH.toFixed(1)}h</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Factory Cards Grid */}
