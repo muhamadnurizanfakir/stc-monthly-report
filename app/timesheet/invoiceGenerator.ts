@@ -52,10 +52,16 @@ export async function generateFactoryInvoice(stc: Factory, factory: Factory, ses
   // Header - STC info
   doc.setFontSize(8);
   doc.setTextColor(60, 60, 60);
-  doc.text('Sapura Technical Centre Sdn. Bhd (' + (stc?.registration_no ?? '277264-H') + ')', margin + 33, 14);
-  doc.text(stc?.address ?? 'No. 11, Jalan P/1, Seksyen 13, Kawasan Perindustrian Bangi', margin + 33, 18);
-  doc.text('43650 Bandar Baru Bangi, Selangor Darul Ehsan Malaysia', margin + 33, 22);
-  doc.text('Tel: ' + (stc?.phone ?? '+603 8926 3610') + '  |  Website: www.sapuraindustrial.com.my', margin + 33, 26);
+  const headerX = margin + 33;
+  const maxW = pageW - headerX - margin;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sapura Technical Centre Sdn. Bhd (' + (stc?.registration_no ?? '277264-H') + ')', headerX, 13);
+  doc.setFont('helvetica', 'normal');
+  const addr = stc?.address ?? 'No. 11, Jalan P/1, Seksyen 13, Kawasan Perindustrian Bangi, 43650 Bandar Baru Bangi, Selangor Darul Ehsan Malaysia';
+  const addrLines = doc.splitTextToSize(addr, maxW);
+  doc.text(addrLines, headerX, 17);
+  const afterAddr = 17 + addrLines.length * 4;
+  doc.text('Tel: ' + (stc?.phone ?? '+603 8926 3610') + '  |  Website: www.sapuraindustrial.com.my', headerX, afterAddr);
 
   // Divider
   doc.setDrawColor(200, 200, 200);
@@ -196,9 +202,14 @@ export async function generateIndividualReport(stc: Factory, user: User & { id: 
   // Header
   doc.setFontSize(8);
   doc.setTextColor(60, 60, 60);
-  doc.text('Sapura Technical Centre Sdn. Bhd (' + (stc?.registration_no ?? '277264-H') + ')', margin + 33, 14);
-  doc.text(stc?.address ?? 'No. 11, Jalan P/1, Seksyen 13, Kawasan Perindustrian Bangi', margin + 33, 18);
-  doc.text('43650 Bandar Baru Bangi, Selangor Darul Ehsan Malaysia', margin + 33, 22);
+  const headerX2 = margin + 33;
+  const maxW2 = pageW - headerX2 - margin;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sapura Technical Centre Sdn. Bhd (' + (stc?.registration_no ?? '277264-H') + ')', headerX2, 13);
+  doc.setFont('helvetica', 'normal');
+  const addr2 = stc?.address ?? 'No. 11, Jalan P/1, Seksyen 13, Kawasan Perindustrian Bangi, 43650 Bandar Baru Bangi, Selangor Darul Ehsan Malaysia';
+  const addrLines2 = doc.splitTextToSize(addr2, maxW2);
+  doc.text(addrLines2, headerX2, 17);
 
   doc.setDrawColor(200, 200, 200);
   doc.line(margin, 33, pageW - margin, 33);
