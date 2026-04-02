@@ -95,6 +95,17 @@ export default function ClockPage() {
     setSaving(true);
     const now = new Date().toISOString();
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+
+    // Auto-close any existing active sessions for this user first
+    const { data: openSessions } = await supabase.from('ts_sessions')
+      .select('id, clock_in').eq('user_id', selectedUser.id).is('clock_out', null);
+    if (openSessions && openSessions.length > 0) {
+      for (const s of openSessions) {
+        const hrs = parseFloat(((Date.now() - new Date(s.clock_in).getTime()) / 3600000).toFixed(2));
+        await supabase.from('ts_sessions').update({ clock_out: now, hours_worked: hrs }).eq('id', s.id);
+      }
+    }
+
     const { data } = await supabase.from('ts_sessions').insert([{
       user_id: selectedUser.id, factory_code: selectedFactory, clock_in: now, date: today,
     }]).select().single();
