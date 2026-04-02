@@ -53,7 +53,7 @@ export default function ClockPage() {
 
   const fetchSessions = useCallback(async (userId: string, month: string) => {
     const { data } = await supabase.from('ts_sessions').select('*')
-      .eq('user_id', userId).gte('date', month + '-01').lte('date', month + '-31')
+      .eq('user_id', userId).gte('date', month + '-01').lte('date', (() => { const [y,m] = month.split('-'); return new Date(parseInt(y), parseInt(m), 0).toISOString().split('T')[0]; })())
       .order('clock_in', { ascending: false });
     setSessions(data ?? []);
   }, []);

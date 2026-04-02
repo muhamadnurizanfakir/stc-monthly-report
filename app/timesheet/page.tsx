@@ -26,6 +26,7 @@ type NavItem = 'overview' | 'sessions' | 'calculation';
 export default function TimesheetDashboard() {
   const [factories, setFactories] = useState<Factory[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [activeSessions, setActiveSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [nav, setNav] = useState<NavItem>('overview');
   const [generating, setGenerating] = useState<string | null>(null);
@@ -66,20 +67,24 @@ export default function TimesheetDashboard() {
 
   async function fetchData() {
     setLoading(true);
-    const [{ data: fac }, { data: ses }] = await Promise.all([
+    const lastDay = (() => { const [y,m] = selectedMonth.split('-'); return new Date(parseInt(y), parseInt(m), 0).toISOString().split('T')[0]; })();
+    const [{ data: fac }, { data: ses }, { data: activeSes }] = await Promise.all([
       supabase.from('ts_factories').select('*').eq('is_active', true).order('sort_order'),
       supabase.from('ts_sessions').select('*, ts_users(name, employee_id, designation, hourly_rate)')
         .gte('date', selectedMonth + '-01')
-        .lte('date', selectedMonth + '-31')
+        .lte('date', lastDay)
         .order('clock_in', { ascending: false }),
+      supabase.from('ts_sessions').select('*, ts_users(name, employee_id)')
+        .is('clock_out', null),
     ]);
     setFactories(fac ?? []);
     setSessions(ses ?? []);
+    setActiveSessions(activeSes ?? []);
     setLoading(false);
   }
 
   const today = new Date().toISOString().split('T')[0];
-  const activeSessions = sessions.filter(s => !s.clock_out);
+  // activeSessions comes from state now - always current regardless of month filter
 
   const factoryStats = useMemo(() => factories.map((fac, idx) => {
     const fs = sessions.filter(s => s.factory_code === fac.code);

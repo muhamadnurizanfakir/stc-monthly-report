@@ -15,27 +15,29 @@ export async function GET(req: NextRequest) {
   // Get STC info (issuer)
   const { data: stc } = await supabase.from('ts_factories').select('*').eq('code', 'STCSB').single();
 
-  if (factoryCode) {
-    // Factory invoice
+  if (factoryCode && period) {
+    const p = period as string;
+    const lastDay = (() => { const [y,m] = p.split('-'); return new Date(parseInt(y), parseInt(m), 0).toISOString().split('T')[0]; })();
     const { data: factory } = await supabase.from('ts_factories').select('*').eq('code', factoryCode).single();
     const { data: sessions } = await supabase.from('ts_sessions')
       .select('*, ts_users(name, employee_id, designation, hourly_rate)')
       .eq('factory_code', factoryCode)
-      .gte('date', period + '-01')
-      .lte('date', period + '-31')
+      .gte('date', p + '-01')
+      .lte('date', lastDay)
       .not('clock_out', 'is', null)
       .order('date');
     return NextResponse.json({ stc, factory, sessions, type: 'factory' });
   }
 
-  if (userId) {
-    // Individual report
+  if (userId && period) {
+    const p = period as string;
+    const lastDay = (() => { const [y,m] = p.split('-'); return new Date(parseInt(y), parseInt(m), 0).toISOString().split('T')[0]; })();
     const { data: user } = await supabase.from('ts_users').select('*, ts_factories(name)').eq('id', userId).single();
     const { data: sessions } = await supabase.from('ts_sessions')
       .select('*, ts_factories(name)')
       .eq('user_id', userId)
-      .gte('date', period + '-01')
-      .lte('date', period + '-31')
+      .gte('date', p + '-01')
+      .lte('date', lastDay)
       .not('clock_out', 'is', null)
       .order('date');
     return NextResponse.json({ stc, user, sessions, type: 'individual' });
