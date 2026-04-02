@@ -45,10 +45,27 @@ export default function ClockPage() {
   useEffect(() => { fetchInit(); }, []);
 
   const fetchActiveSession = useCallback(async (userId: string) => {
+    // Get all active sessions, close duplicates, keep only latest
     const { data } = await supabase.from('ts_sessions')
-      .select('id, factory_code, clock_in').eq('user_id', userId).is('clock_out', null).maybeSingle();
-    if (data) { setActiveSession(data); setSelectedFactory(data.factory_code); }
-    else setActiveSession(null);
+      .select('id, factory_code, clock_in')
+      .eq('user_id', userId)
+      .is('clock_out', null)
+      .order('clock_in', { ascending: false });
+    
+    if (data && data.length > 0) {
+      // Close all older duplicates
+      if (data.length > 1) {
+        const now = new Date().toISOString();
+        for (let i = 1; i < data.length; i++) {
+          const hrs = parseFloat(((Date.now() - new Date(data[i].clock_in).getTime()) / 3600000).toFixed(2));
+          await supabase.from('ts_sessions').update({ clock_out: now, hours_worked: hrs }).eq('id', data[i].id);
+        }
+      }
+      setActiveSession(data[0]);
+      setSelectedFactory(data[0].factory_code);
+    } else {
+      setActiveSession(null);
+    }
   }, []);
 
   const fetchSessions = useCallback(async (userId: string, month: string) => {
