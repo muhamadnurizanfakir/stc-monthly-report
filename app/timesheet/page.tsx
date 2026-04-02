@@ -30,6 +30,12 @@ export default function TimesheetDashboard() {
   const [loading, setLoading] = useState(true);
   const [nav, setNav] = useState<NavItem>('overview');
   const [generating, setGenerating] = useState<string | null>(null);
+  const [editModal, setEditModal] = useState<Session | null>(null);
+  const [deleteModal, setDeleteModal] = useState<Session | null>(null);
+  const [modalPassword, setModalPassword] = useState('');
+  const [modalError, setModalError] = useState('');
+  const [editForm, setEditForm] = useState({ clock_in: '', clock_out: '', factory_code: '', notes: '' });
+  const [modalSaving, setModalSaving] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -37,6 +43,39 @@ export default function TimesheetDashboard() {
   const [filterUser, setFilterUser] = useState('');
 
   useEffect(() => { fetchData(); }, [selectedMonth]);
+
+  async function verifyPassword() {
+    const res = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: modalPassword }) });
+    const data = await res.json();
+    return data.ok;
+  }
+
+  async function handleDeleteSession() {
+    setModalSaving(true);
+    const ok = await verifyPassword();
+    if (!ok) { setModalError('Wrong password.'); setModalSaving(false); return; }
+    await supabase.from('ts_sessions').delete().eq('id', deleteModal!.id);
+    setDeleteModal(null); setModalPassword(''); setModalError('');
+    fetchData();
+    setModalSaving(false);
+  }
+
+  async function handleEditSession() {
+    setModalSaving(true);
+    const ok = await verifyPassword();
+    if (!ok) { setModalError('Wrong password.'); setModalSaving(false); return; }
+    const date = editModal!.date;
+    const clockIn = new Date(date + 'T' + editForm.clock_in + ':00+08:00').toISOString();
+    const clockOut = editForm.clock_out ? new Date(date + 'T' + editForm.clock_out + ':00+08:00').toISOString() : null;
+    const hrs = clockOut ? parseFloat(((new Date(clockOut).getTime() - new Date(clockIn).getTime()) / 3600000).toFixed(2)) : null;
+    await supabase.from('ts_sessions').update({
+      clock_in: clockIn, clock_out: clockOut, hours_worked: hrs,
+      factory_code: editForm.factory_code, notes: editForm.notes || null,
+    }).eq('id', editModal!.id);
+    setEditModal(null); setModalPassword(''); setModalError('');
+    fetchData();
+    setModalSaving(false);
+  }
 
   async function generateInvoice(factoryCode: string) {
     setGenerating(factoryCode);
@@ -409,6 +448,14 @@ export default function TimesheetDashboard() {
                               <td className="py-2 px-4 font-mono text-slate-600">{s.clock_out ? new Date(s.clock_out).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' }) : <span className="text-green-600 font-semibold animate-pulse">Active</span>}</td>
                               <td className="py-2 px-4">{s.hours_worked != null ? <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-semibold">{s.hours_worked}h</span> : '—'}</td>
                               <td className="py-2 px-4 text-slate-500 max-w-[150px] truncate">{s.notes ?? '—'}</td>
+                              <td className="py-2 px-4">
+                                <div className="flex gap-1">
+                                  <button onClick={() => { setEditModal(s); setEditForm({ clock_in: new Date(s.clock_in).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false }), clock_out: s.clock_out ? new Date(s.clock_out).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false }) : '', factory_code: s.factory_code, notes: s.notes ?? '' }); setModalPassword(''); setModalError(''); }}
+                                    className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️</button>
+                                  <button onClick={() => { setDeleteModal(s); setModalPassword(''); setModalError(''); }}
+                                    className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
+                                </div>
+                              </td>
                             </tr>
                           );
                         })}
@@ -421,6 +468,74 @@ export default function TimesheetDashboard() {
           )}
         </div>
       </div>
+      {/* DELETE MODAL */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="font-bold text-slate-800 text-lg mb-2">Delete Session</h3>
+            <p className="text-sm text-slate-600 mb-1">Delete session for <span className="font-semibold">{(deleteModal.ts_users as {name:string}|undefined)?.name}</span>?</p>
+            <p className="text-xs text-slate-400 mb-4">{new Date(deleteModal.date + 'T00:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })} · {deleteModal.factory_code} · {deleteModal.hours_worked ?? 0}h</p>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Admin Password</label>
+            <input type="password" value={modalPassword} onChange={e => setModalPassword(e.target.value)}
+              placeholder="Enter password" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-red-400" />
+            {modalError && <p className="text-red-500 text-xs mb-2">{modalError}</p>}
+            <div className="flex gap-2 mt-2">
+              <button onClick={handleDeleteSession} disabled={modalSaving || !modalPassword}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50">
+                {modalSaving ? 'Deleting...' : '🗑️ Delete'}
+              </button>
+              <button onClick={() => { setDeleteModal(null); setModalPassword(''); setModalError(''); }}
+                className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
+      {editModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="font-bold text-slate-800 text-lg mb-1">Edit Session</h3>
+            <p className="text-xs text-slate-400 mb-4">{(editModal.ts_users as {name:string}|undefined)?.name} · {new Date(editModal.date + 'T00:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Clock In</label>
+                <input type="time" value={editForm.clock_in} onChange={e => setEditForm({ ...editForm, clock_in: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Clock Out</label>
+                <input type="time" value={editForm.clock_out} onChange={e => setEditForm({ ...editForm, clock_out: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Factory</label>
+                <select value={editForm.factory_code} onChange={e => setEditForm({ ...editForm, factory_code: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  {factories.map(f => <option key={f.id} value={f.code}>{f.code} — {f.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Notes</label>
+                <input type="text" value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Admin Password</label>
+            <input type="password" value={modalPassword} onChange={e => setModalPassword(e.target.value)}
+              placeholder="Enter password" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            {modalError && <p className="text-red-500 text-xs mb-2">{modalError}</p>}
+            <div className="flex gap-2 mt-2">
+              <button onClick={handleEditSession} disabled={modalSaving || !modalPassword}
+                className="flex-1 py-2 bg-blue-950 hover:bg-blue-900 text-white rounded-lg text-sm font-semibold disabled:opacity-50">
+                {modalSaving ? 'Saving...' : '✅ Save Changes'}
+              </button>
+              <button onClick={() => { setEditModal(null); setModalPassword(''); setModalError(''); }}
+                className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
