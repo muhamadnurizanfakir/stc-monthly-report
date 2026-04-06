@@ -72,6 +72,21 @@ function buildRange(activities: GanttActivity[]) {
   return { months, start, end, totalDays };
 }
 
+// Assign bars to swim lanes to avoid overlap
+function assignLanes(bars: GanttBar[]): { bar: GanttBar; lane: number }[] {
+  const sorted = [...bars].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+  const laneEnds: string[] = []; // track end date of last bar in each lane
+  return sorted.map(bar => {
+    let lane = 0;
+    for (let i = 0; i < laneEnds.length; i++) {
+      if (bar.start_date >= laneEnds[i]) { lane = i; laneEnds[i] = bar.end_date; break; }
+      if (i === laneEnds.length - 1) { lane = laneEnds.length; laneEnds.push(bar.end_date); }
+    }
+    if (laneEnds.length === 0) laneEnds.push(bar.end_date);
+    return { bar, lane };
+  });
+}
+
 export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,8 +134,13 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
   if (activities.length === 0) return <div className="text-xs text-slate-400 py-4 text-center">No Gantt data yet. Add activities in Admin.</div>;
 
   const ROW_H = 28;
+  const LANE_H = 18;
   const LABEL_W = 140;
-  const chartH = activities.length * ROW_H + 40;
+  const chartH = activities.reduce((sum, act) => {
+    const ld = assignLanes(act.gantt_bars);
+    const nl = Math.max(1, ...ld.map(l => l.lane + 1));
+    return sum + Math.max(ROW_H, nl * LANE_H + 4);
+  }, 0) + 10;
 
   return (
     <div className="overflow-x-auto rounded border border-slate-200 bg-white">
@@ -175,25 +195,47 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           })()}
           {/* Row labels */}
           <div className="absolute top-0 left-0 bottom-0" style={{ width: LABEL_W }}>
-            {activities.map((act, i) => (
-              <div key={act.id} style={{ height: ROW_H, top: i * ROW_H, position: "absolute", width: LABEL_W }}
+            {activities.map((act, i) => {
+              const ld2 = assignLanes(act.gantt_bars);
+              const nl2 = Math.max(1, ...ld2.map(l => l.lane + 1));
+              const rowH2 = Math.max(ROW_H, nl2 * LANE_H + 4);
+              const topOffset2 = activities.slice(0, i).reduce((sum, a) => {
+                const ld3 = assignLanes(a.gantt_bars);
+                const nl3 = Math.max(1, ...ld3.map(l => l.lane + 1));
+                return sum + Math.max(ROW_H, nl3 * LANE_H + 4);
+              }, 0);
+              return (
+              <div key={act.id} style={{ height: rowH2, top: topOffset2, position: "absolute", width: LABEL_W }}
                 className="flex items-center px-2 border-b border-slate-50">
                 <span className="text-xs text-slate-600 truncate">{act.activity_name}</span>
               </div>
-            ))}
+              );
+            })}
           </div>
           {/* Bars & milestones */}
           <div className="absolute top-0 bottom-0" style={{ left: LABEL_W, right: 0 }}>
-            {activities.map((act, i) => (
-              <div key={act.id} style={{ height: ROW_H, top: i * ROW_H, position: "absolute", width: "100%" }}
+            {activities.map((act, i) => {
+              const lanesData = assignLanes(act.gantt_bars);
+              const numLanes = Math.max(1, ...lanesData.map(l => l.lane + 1));
+              const rowH = Math.max(ROW_H, numLanes * LANE_H + 4);
+              // Calculate cumulative top offset
+              const topOffset = activities.slice(0, i).reduce((sum, a) => {
+                const ld = assignLanes(a.gantt_bars);
+                const nl = Math.max(1, ...ld.map(l => l.lane + 1));
+                return sum + Math.max(ROW_H, nl * LANE_H + 4);
+              }, 0);
+              return (
+              <div key={act.id} style={{ height: rowH, top: topOffset, position: "absolute", width: "100%" }}
                 className="border-b border-slate-50">
-                {act.gantt_bars.map(bar => {
+                {lanesData.map(({ bar, lane }) => {
                   const isPlan = bar.bar_type === "plan";
                   const barW = bWidth(bar.start_date, bar.end_date, isPlan);
                   const isShort = barW < 8;
                   const color = BAR_COLORS[bar.bar_type] ?? "#64748b";
+                  const laneTop = 2 + lane * LANE_H;
+                  const laneHeight = LANE_H - 3;
                   return (
-                  <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: barW + "%", top: "20%", height: "60%", position: "absolute" }}>
+                  <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: barW + "%", top: laneTop, height: laneHeight, position: "absolute" }}>
                     {/* Plan bar - always show as outline */}
                     {isPlan ? (
                       <div title={"Plan: " + bar.start_date + " → " + bar.end_date} style={{ position: "absolute", inset: 0, background: "transparent", border: "2px solid " + PLAN_OUTLINE, borderRadius: 3, opacity: 0.7 }} />
@@ -227,7 +269,8 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                   </div>
                 ))}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         {/* Legend */}
