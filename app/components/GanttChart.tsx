@@ -75,9 +75,15 @@ function buildRange(activities: GanttActivity[]) {
 // Assign bars to swim lanes to avoid overlap
 function assignLanes(bars: GanttBar[]): { bar: GanttBar; lane: number }[] {
   if (!bars || bars.length === 0) return [];
-  const sorted = [...bars].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+
+  // Separate plan bars and non-plan bars
+  const planBars = bars.filter(b => b.bar_type === 'plan');
+  const otherBars = bars.filter(b => b.bar_type !== 'plan');
+
+  // Assign lanes to plan bars only (no overlap between plans)
+  const sorted = [...planBars].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
   const laneEnds: string[] = [];
-  return sorted.map(bar => {
+  const planLanes: { bar: GanttBar; lane: number }[] = sorted.map(bar => {
     if (!bar.start_date || !bar.end_date) return { bar, lane: 0 };
     let assignedLane = -1;
     for (let i = 0; i < laneEnds.length; i++) {
@@ -93,6 +99,18 @@ function assignLanes(bars: GanttBar[]): { bar: GanttBar; lane: number }[] {
     }
     return { bar, lane: assignedLane };
   });
+
+  // Assign actual/postponed bars to the same lane as their overlapping plan bar
+  const otherLanes: { bar: GanttBar; lane: number }[] = otherBars.map(bar => {
+    if (!bar.start_date || !bar.end_date) return { bar, lane: 0 };
+    // Find matching plan bar by time overlap
+    const match = planLanes.find(pl =>
+      pl.bar.start_date <= bar.end_date && pl.bar.end_date >= bar.start_date
+    );
+    return { bar, lane: match ? match.lane : 0 };
+  });
+
+  return [...planLanes, ...otherLanes];
 }
 
 export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId }: Props) {
