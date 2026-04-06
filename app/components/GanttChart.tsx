@@ -74,16 +74,24 @@ function buildRange(activities: GanttActivity[]) {
 
 // Assign bars to swim lanes to avoid overlap
 function assignLanes(bars: GanttBar[]): { bar: GanttBar; lane: number }[] {
+  if (!bars || bars.length === 0) return [];
   const sorted = [...bars].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
-  const laneEnds: string[] = []; // track end date of last bar in each lane
+  const laneEnds: string[] = [];
   return sorted.map(bar => {
-    let lane = 0;
+    if (!bar.start_date || !bar.end_date) return { bar, lane: 0 };
+    let assignedLane = -1;
     for (let i = 0; i < laneEnds.length; i++) {
-      if (bar.start_date >= laneEnds[i]) { lane = i; laneEnds[i] = bar.end_date; break; }
-      if (i === laneEnds.length - 1) { lane = laneEnds.length; laneEnds.push(bar.end_date); }
+      if (bar.start_date >= laneEnds[i]) {
+        assignedLane = i;
+        laneEnds[i] = bar.end_date;
+        break;
+      }
     }
-    if (laneEnds.length === 0) laneEnds.push(bar.end_date);
-    return { bar, lane };
+    if (assignedLane === -1) {
+      assignedLane = laneEnds.length;
+      laneEnds.push(bar.end_date);
+    }
+    return { bar, lane: assignedLane };
   });
 }
 
@@ -138,7 +146,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
   const LABEL_W = 140;
   const chartH = activities.reduce((sum, act) => {
     const ld = assignLanes(act.gantt_bars);
-    const nl = Math.max(1, ...ld.map(l => l.lane + 1));
+    const nl = ld.length > 0 ? Math.max(1, ...ld.map(l => l.lane + 1)) : 1;
     return sum + Math.max(ROW_H, nl * LANE_H + 4);
   }, 0) + 10;
 
@@ -197,11 +205,11 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           <div className="absolute top-0 left-0 bottom-0" style={{ width: LABEL_W }}>
             {activities.map((act, i) => {
               const ld2 = assignLanes(act.gantt_bars);
-              const nl2 = Math.max(1, ...ld2.map(l => l.lane + 1));
+              const nl2 = ld2.length > 0 ? Math.max(1, ...ld2.map(l => l.lane + 1)) : 1;
               const rowH2 = Math.max(ROW_H, nl2 * LANE_H + 4);
               const topOffset2 = activities.slice(0, i).reduce((sum, a) => {
                 const ld3 = assignLanes(a.gantt_bars);
-                const nl3 = Math.max(1, ...ld3.map(l => l.lane + 1));
+                const nl3 = ld3.length > 0 ? Math.max(1, ...ld3.map(l => l.lane + 1)) : 1;
                 return sum + Math.max(ROW_H, nl3 * LANE_H + 4);
               }, 0);
               return (
@@ -216,12 +224,12 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           <div className="absolute top-0 bottom-0" style={{ left: LABEL_W, right: 0 }}>
             {activities.map((act, i) => {
               const lanesData = assignLanes(act.gantt_bars);
-              const numLanes = Math.max(1, ...lanesData.map(l => l.lane + 1));
+              const numLanes = lanesData.length > 0 ? Math.max(1, ...lanesData.map(l => l.lane + 1)) : 1;
               const rowH = Math.max(ROW_H, numLanes * LANE_H + 4);
               // Calculate cumulative top offset
               const topOffset = activities.slice(0, i).reduce((sum, a) => {
                 const ld = assignLanes(a.gantt_bars);
-                const nl = Math.max(1, ...ld.map(l => l.lane + 1));
+                const nl = ld.length > 0 ? Math.max(1, ...ld.map(l => l.lane + 1)) : 1;
                 return sum + Math.max(ROW_H, nl * LANE_H + 4);
               }, 0);
               return (
