@@ -55,9 +55,10 @@ function buildRange(activities: GanttActivity[]) {
       if (ms.milestone_date) allDates.push(pd(ms.milestone_date).getTime());
     }
   }
-  const now = new Date();
-  const defStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const defEnd   = new Date(now.getFullYear(), now.getMonth() + 11, 1);
+  const todayMYT = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+  const [ty, tm] = todayMYT.split('-').map(Number);
+  const defStart = new Date(ty, tm - 2, 1);
+  const defEnd   = new Date(ty, tm + 10, 1);
   const minD = allDates.length > 0 ? new Date(Math.min(...allDates)) : defStart;
   const maxD = allDates.length > 0 ? new Date(Math.max(...allDates)) : defEnd;
   const start = new Date(minD.getFullYear(), minD.getMonth() - 1, 1);
@@ -208,8 +209,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           </div>
           {/* Today line */}
           {(() => {
-            const now = new Date();
-            const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+            const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
             const todayPct = pct(todayStr);
             if (todayPct <= 0 || todayPct >= 100) return null;
             return (
