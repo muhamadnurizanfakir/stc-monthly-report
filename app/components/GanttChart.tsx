@@ -210,7 +210,9 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           {/* Today line */}
           {(() => {
             const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
-            const todayPct = pct(todayStr);
+            const [ty2, tm2, td2] = todayStr.split('-').map(Number);
+            const todayMs = new Date(Date.UTC(ty2, tm2-1, td2, 4, 0, 0)).getTime();
+            const todayPct = ((todayMs - start.getTime()) / (totalDays * 86400000)) * 100;
             if (todayPct <= 0 || todayPct >= 100) return null;
             return (
               <div style={{ position: "absolute", left: `calc(${todayPct}% + 0px)`, top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}
