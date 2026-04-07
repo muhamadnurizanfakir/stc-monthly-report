@@ -234,8 +234,8 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 return sum + Math.max(ROW_H, nl3 * LANE_H + 4);
               }, 0);
               return (
-              <div key={act.id} style={{ height: rowH2, top: topOffset2, position: "absolute", width: LABEL_W }}
-                className="flex items-center px-2 border-b border-slate-50">
+              <div key={act.id} style={{ height: rowH2, top: topOffset2, position: "absolute", width: LABEL_W, background: i % 2 === 0 ? "white" : "#f8fafc" }}
+                className="flex items-center px-2 border-b border-slate-100">
                 <span className="text-xs text-slate-600 truncate">{act.activity_name}</span>
               </div>
               );
@@ -269,15 +269,15 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 return sum + Math.max(ROW_H, nl * LANE_H + 4);
               }, 0);
               return (
-              <div key={act.id} style={{ height: rowH, top: topOffset, position: "absolute", width: "100%" }}
-                className="border-b border-slate-50">
+              <div key={act.id} style={{ height: rowH, top: topOffset, position: "absolute", width: "100%", background: i % 2 === 0 ? "white" : "#f8fafc" }}
+                className="border-b border-slate-100">
                 {lanesData.map(({ bar, lane }) => {
                   const isPlan = bar.bar_type === "plan";
                   const barW = bWidth(bar.start_date, bar.end_date, isPlan);
                   const isShort = barW < 5;
                   const color = BAR_COLORS[bar.bar_type] ?? "#64748b";
-                  const laneTop = 2 + lane * LANE_H;
-                  const laneHeight = LANE_H - 3;
+                  const laneTop = 3 + lane * LANE_H;
+                  const laneHeight = LANE_H - 6;
                   return (
                   <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: barW + "%", top: laneTop, height: laneHeight, position: "absolute" }}>
                     {/* Plan bar - always show as outline */}
@@ -342,10 +342,10 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 })}
                 {act.gantt_milestones.map((ms) => (
                   <div key={ms.id}
-                    style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", lineHeight: 1, zIndex: 5 }}>
+                    style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", lineHeight: 1, zIndex: 8 }}>
                     {/* Big milestone symbol */}
                     <div title={(ms.label ?? ms.shape) + (ms.is_achieved ? " ✅ Achieved" : "")}
-                      style={{ fontSize: 18, color: ms.is_achieved ? "#16a34a" : "#1e3a8a", lineHeight: 1, textAlign: "center" }}>
+                      style={{ fontSize: 16, color: ms.is_achieved ? "#16a34a" : "#334155", lineHeight: 1, textAlign: "center" }}>
                       {ms.shape === "star" ? "★" : "◆"}
                     </div>
                     {/* Comment bubble label - below milestone */}
