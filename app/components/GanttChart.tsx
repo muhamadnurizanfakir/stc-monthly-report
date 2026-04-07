@@ -221,21 +221,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
               return <div key={i} style={{ width: (daysInMonth / totalDays * 100) + "%" }} className="border-r border-slate-100 h-full shrink-0" />;
             })}
           </div>
-          {/* Today line - offset by LABEL_W + pct of chart data area */}
-          {(() => {
-            const todayMYT = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
-            const [ty, tm, td] = todayMYT.split('-').map(Number);
-            const todayT = Date.UTC(ty, tm-1, td, 4, 0, 0);
-            const startT = start.getTime();
-            const endT = startT + totalDays * 86400000;
-            if (todayT <= startT || todayT >= endT) return null;
-            const dataPct = ((todayT - startT) / (endT - startT)) * 100;
-            return (
-              <div style={{ position: "absolute", left: `calc(${LABEL_W}px + ${dataPct}% * (100% - ${LABEL_W}px) / 100)`, top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}>
-                <span style={{ position: "absolute", top: 0, left: 3, fontSize: 8, color: "#f97316", fontWeight: 700, whiteSpace: "nowrap" }}>Today</span>
-              </div>
-            );
-          })()}
+
           {/* Row labels */}
           <div className="absolute top-0 left-0 bottom-0" style={{ width: LABEL_W }}>
             {activities.map((act, i) => {
@@ -257,6 +243,21 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           </div>
           {/* Bars & milestones */}
           <div className="absolute top-0 bottom-0" style={{ left: LABEL_W, right: 0 }}>
+            {/* Today line - inside bars area so % is relative to chart data only */}
+            {(() => {
+              const todayMYT = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+              const [ty, tm, td] = todayMYT.split('-').map(Number);
+              const todayT = Date.UTC(ty, tm-1, td, 4, 0, 0);
+              const startT = start.getTime();
+              const endT = startT + totalDays * 86400000;
+              if (todayT <= startT || todayT >= endT) return null;
+              const leftPct = ((todayT - startT) / (endT - startT)) * 100;
+              return (
+                <div style={{ position: "absolute", left: leftPct + "%", top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}>
+                  <span style={{ position: "absolute", top: 0, left: 3, fontSize: 8, color: "#f97316", fontWeight: 700, whiteSpace: "nowrap" }}>Today</span>
+                </div>
+              );
+            })()}
             {activities.map((act, i) => {
               const lanesData = assignLanes(act.gantt_bars);
               const numLanes = lanesData.length > 0 ? Math.max(1, ...lanesData.map(l => l.lane + 1)) : 1;
