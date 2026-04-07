@@ -221,7 +221,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
               return <div key={i} style={{ width: (daysInMonth / totalDays * 100) + "%" }} className="border-r border-slate-100 h-full shrink-0" />;
             })}
           </div>
-          {/* Today line - positioned by calculating days from chart start */}
+          {/* Today line - offset by LABEL_W + pct of chart data area */}
           {(() => {
             const todayMYT = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
             const [ty, tm, td] = todayMYT.split('-').map(Number);
@@ -229,9 +229,9 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
             const startT = start.getTime();
             const endT = startT + totalDays * 86400000;
             if (todayT <= startT || todayT >= endT) return null;
-            const leftPct = ((todayT - startT) / (endT - startT)) * 100;
+            const dataPct = ((todayT - startT) / (endT - startT)) * 100;
             return (
-              <div style={{ position: "absolute", left: leftPct + "%", top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}>
+              <div style={{ position: "absolute", left: `calc(${LABEL_W}px + ${dataPct}% * (100% - ${LABEL_W}px) / 100)`, top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}>
                 <span style={{ position: "absolute", top: 0, left: 3, fontSize: 8, color: "#f97316", fontWeight: 700, whiteSpace: "nowrap" }}>Today</span>
               </div>
             );
