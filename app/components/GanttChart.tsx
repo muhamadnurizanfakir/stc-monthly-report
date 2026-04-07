@@ -175,7 +175,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
   if (activities.length === 0) return <div className="text-xs text-slate-400 py-4 text-center">No Gantt data yet. Add activities in Admin.</div>;
 
   const ROW_H = 28;
-  const LANE_H = 18;
+  const LANE_H = 22;
   const LABEL_W = 140;
   const chartH = activities.reduce((sum, act) => {
     const ld = assignLanes(act.gantt_bars);
@@ -274,10 +274,14 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 {lanesData.map(({ bar, lane }) => {
                   const isPlan = bar.bar_type === "plan";
                   const barW = bWidth(bar.start_date, bar.end_date, isPlan);
-                  const isShort = barW < 5;
+                  // Label fits if bar is wide enough for the text
+                  // Approx: each char needs ~1% width per 20 chars of label
+                  const labelLen = (bar.label ?? '').length;
+                  const minWidthForLabel = labelLen * 0.7 + 2; // % width needed
+                  const isShort = barW < minWidthForLabel;
                   const color = BAR_COLORS[bar.bar_type] ?? "#64748b";
-                  const laneTop = 3 + lane * LANE_H;
-                  const laneHeight = LANE_H - 6;
+                  const laneTop = 2 + lane * LANE_H;
+                  const laneHeight = LANE_H - 4;
                   return (
                   <div key={bar.id} style={{ left: pct(bar.start_date) + "%", width: barW + "%", top: laneTop, height: laneHeight, position: "absolute" }}>
                     {/* Plan bar - always show as outline */}
