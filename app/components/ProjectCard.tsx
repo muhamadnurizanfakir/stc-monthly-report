@@ -149,12 +149,12 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
           {/* Action Items Section */}
           {items.length > 0 && (
             <div>
-              <div className="px-4 py-2 bg-slate-100 border-b border-slate-200">
-                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Action Items</p>
+              <div className="px-4 py-2 bg-blue-950 border-b border-blue-900">
+                <p className="text-xs font-bold text-white uppercase tracking-wider">Action Items</p>
               </div>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <tr className="bg-blue-900 text-blue-100 uppercase tracking-wider border-b border-blue-800">
                     <th className="px-4 py-2 text-left font-semibold w-8">No</th>
                     <th className="px-4 py-2 text-left font-semibold w-28">Items</th>
                     <th className="px-4 py-2 text-left font-semibold">Issue</th>
@@ -165,7 +165,7 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
                 </thead>
                 <tbody>
                   {items.map((item, i) => (
-                    <tr key={item.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                    <tr key={item.id} className={i % 2 === 0 ? "bg-blue-950/5" : "bg-blue-950/10"}>
                       <td className="px-4 py-2.5 text-slate-400">{item.item_no}</td>
                       <td className="px-4 py-2.5 text-slate-600 font-medium">{item.item_category}</td>
                       <td className="px-4 py-2.5 text-slate-700">{item.issue_desc}</td>

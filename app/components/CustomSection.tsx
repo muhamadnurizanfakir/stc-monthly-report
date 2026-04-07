@@ -55,12 +55,12 @@ function IndividualCard({ project, sectionColor, onRefresh }: { project: CustomP
           </div>
           {items.length > 0 && (
             <div>
-              <div className="px-4 py-2 bg-slate-100 border-b border-slate-200">
-                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Action Items</p>
+              <div className="px-4 py-2 bg-blue-950 border-b border-blue-900">
+                <p className="text-xs font-bold text-white uppercase tracking-wider">Action Items</p>
               </div>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <tr className="bg-blue-900 text-blue-100 uppercase tracking-wider border-b border-blue-800">
                     <th className="px-4 py-2 text-left font-semibold w-8">No</th>
                     <th className="px-4 py-2 text-left font-semibold">Issue</th>
                     <th className="px-4 py-2 text-left font-semibold">Action Plan</th>
@@ -157,12 +157,12 @@ function CombinedCard({ section, projects, onRefresh }: { section: Section; proj
           </div>
           {allItems.length > 0 && (
             <div>
-              <div className="px-4 py-2 bg-slate-100 border-b border-slate-200">
-                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Action Items</p>
+              <div className="px-4 py-2 bg-blue-950 border-b border-blue-900">
+                <p className="text-xs font-bold text-white uppercase tracking-wider">Action Items</p>
               </div>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <tr className="bg-blue-900 text-blue-100 uppercase tracking-wider border-b border-blue-800">
                     <th className="px-4 py-2 text-left font-semibold w-8">No</th>
                     <th className="px-4 py-2 text-left font-semibold w-32">Project</th>
                     <th className="px-4 py-2 text-left font-semibold">Issue</th>

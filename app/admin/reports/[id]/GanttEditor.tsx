@@ -175,6 +175,46 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     fetchActivities();
   }
 
+  async function renameActivity(id: string, currentName: string) {
+    const newName = prompt("Rename activity:", currentName);
+    if (!newName || newName === currentName) return;
+    await supabase.from("gantt_activities").update({ activity_name: newName }).eq("id", id);
+    fetchActivities();
+  }
+
+  async function insertActivityAfter(afterId: string, afterSort: number) {
+    const name = prompt("New activity name:");
+    if (!name) return;
+    // Shift all activities with sort_order > afterSort up by 1
+    const toShift = activities.filter(a => a.sort_order > afterSort);
+    for (const a of toShift) {
+      await supabase.from("gantt_activities").update({ sort_order: a.sort_order + 1 }).eq("id", a.id);
+    }
+    const newSort = afterSort + 1;
+    const newNo = newSort;
+    const payload: Record<string, unknown> = { activity_no: newNo, activity_name: name, sort_order: newSort };
+    if (projectId) payload.project_id = projectId;
+    else if (shohinProjectId) payload.shohin_project_id = shohinProjectId;
+    else if (engineeringProjectId) payload.engineering_project_id = engineeringProjectId;
+    else if (reportId) payload.report_id = reportId;
+    else if (customProjectId) payload.custom_project_id = customProjectId;
+    else if (sectionId) payload.section_id = sectionId;
+    await supabase.from("gantt_activities").insert([payload]);
+    fetchActivities();
+  }
+
+  async function moveActivity(id: string, direction: 'up' | 'down') {
+    const idx = activities.findIndex(a => a.id === id);
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === activities.length - 1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const a = activities[idx];
+    const b = activities[swapIdx];
+    await supabase.from("gantt_activities").update({ sort_order: b.sort_order }).eq("id", a.id);
+    await supabase.from("gantt_activities").update({ sort_order: a.sort_order }).eq("id", b.id);
+    fetchActivities();
+  }
+
   async function deleteActivity(id: string, name: string) {
     if (!confirm("Delete activity " + name + " and all its bars/milestones?")) return;
     await supabase.from("gantt_activities").delete().eq("id", id);
@@ -214,6 +254,10 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono text-slate-400 w-5">{act.activity_no}.</span>
                   <span className="text-sm font-semibold text-slate-700">{act.activity_name}</span>
+                  <button onClick={e => { e.stopPropagation(); renameActivity(act.id, act.activity_name); }}
+                    className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" title="Rename">✏️</button>
+                  <button onClick={e => { e.stopPropagation(); insertActivityAfter(act.id, act.sort_order); }}
+                    className="ml-1 px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200" title="Insert row below">+</button>
                   <span className="text-xs text-slate-400">
                     {act.gantt_bars.length} bar{act.gantt_bars.length !== 1 ? "s" : ""}
                     {" · "}
@@ -222,7 +266,11 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={e => { e.stopPropagation(); deleteActivity(act.id, act.activity_name); }}
+onClick={e => { e.stopPropagation(); moveActivity(act.id, 'up'); }}
+                    className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200 mr-1" title="Move up">↑</button>
+                  <button onClick={e => { e.stopPropagation(); moveActivity(act.id, 'down'); }}
+                    className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200 mr-1" title="Move down">↓</button>
+                  <button onClick={e => { e.stopPropagation(); deleteActivity(act.id, act.activity_name); }}
                     className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100"
                   >
                     🗑️
