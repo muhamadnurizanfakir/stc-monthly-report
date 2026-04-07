@@ -17,7 +17,7 @@ const STATUSES = [
   { value: "at_risk", label: "At Risk" },
   { value: "completed", label: "Completed" },
 ];
-const emptyProject = { project_code: "", project_name: "", category: "coil_spring", customer: "", model: "", sop_date: "", volume: "", completion_pct: "0", status: "on_track", summary_text: "" };
+const emptyProject = { project_code: "", project_name: "", category: "coil_spring", customer: "", model: "", start_date: "", sop_date: "", volume: "", completion_pct: "0", status: "on_track", summary_text: "" };
 const emptyShohin = { project_code: "", project_name: "", customer: "", category: "Material Change", sop_date: "", completion_pct: "0", status: "on_track", summary_text: "" };
 const emptyEng = { project_code: "", project_name: "", customer: "", model: "", sop_date: "", volume: "", category: "Engineering", summary_text: "", completion_pct: "0", status: "on_track" };
 
@@ -84,12 +84,12 @@ export default function ReportDetailPage() {
   // ---- Main project CRUD ----
   function startEditProject(p: Project) {
     setEditingId(p.id); setShowForm(true);
-    setForm({ project_code: p.project_code, project_name: p.project_name, category: p.category, customer: p.customer ?? "", model: p.model ?? "", sop_date: p.sop_date ?? "", volume: p.volume?.toString() ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" });
+    setForm({ project_code: p.project_code, project_name: p.project_name, category: p.category, customer: p.customer ?? "", model: p.model ?? "", start_date: (p as {start_date?: string|null}).start_date ?? "", sop_date: p.sop_date ?? "", volume: p.volume?.toString() ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" });
   }
   async function handleSaveProject() {
     if (!form.project_name || !form.project_code) { alert("Code and Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_code: form.project_code, project_name: form.project_name, category: form.category, customer: form.customer || null, model: form.model || null, sop_date: form.sop_date || null, volume: form.volume ? parseInt(form.volume) : null, completion_pct: parseInt(form.completion_pct), status: form.status, summary_text: form.summary_text || null };
+    const payload = { report_id: reportId, project_code: form.project_code, project_name: form.project_name, category: form.category, customer: form.customer || null, model: form.model || null, start_date: (form as {start_date?: string}).start_date || null, sop_date: form.sop_date || null, volume: form.volume ? parseInt(form.volume) : null, completion_pct: parseInt(form.completion_pct), status: form.status, summary_text: form.summary_text || null };
     if (editingId) await supabase.from("projects").update(payload).eq("id", editingId);
     else await supabase.from("projects").insert([payload]);
     setSuccessMsg(editingId ? "Project updated!" : "Project added!"); setShowForm(false); setEditingId(null);
@@ -198,6 +198,8 @@ export default function ReportDetailPage() {
               <input type="text" value={form.customer} onChange={e => setForm({ ...form, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Model</label>
               <input type="text" value={form.model} onChange={e => setForm({ ...form, model: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Start Date</label>
+              <input type="date" value={form.start_date ?? ''} onChange={e => setForm({ ...form, start_date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">SOP Date</label>
               <input type="date" value={form.sop_date} onChange={e => setForm({ ...form, sop_date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Volume</label>

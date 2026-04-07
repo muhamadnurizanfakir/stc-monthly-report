@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Project } from "../lib/supabase";
 import { supabase } from "../lib/supabase";
-import { StatusBadge, ProgressBar } from "./StatusBadge";
+import { StatusBadge } from "./StatusBadge";
 import GanttChart from "./GanttChart";
 
 interface ProjectCardProps {
@@ -14,6 +14,18 @@ interface ProjectCardProps {
 export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false);
   const items = [...(project.action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
+
+  // Calculate scheduled progress from start_date to sop_date
+  const scheduledPct = (() => {
+    const startD = (project as {start_date?: string|null}).start_date;
+    const sopD = (project as {sop_date?: string|null}).sop_date;
+    if (!startD || !sopD) return null;
+    const start = new Date(startD).getTime();
+    const end = new Date(sopD).getTime();
+    const today = Date.now();
+    if (end <= start) return null;
+    return Math.min(100, Math.max(0, Math.round(((today - start) / (end - start)) * 100)));
+  })();
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-4">
@@ -48,9 +60,46 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-slate-500 font-medium">Overall Progress</span>
-            <span className="text-xs font-bold text-slate-700">{project.completion_pct}%</span>
+            <div className="flex items-center gap-2">
+              {scheduledPct !== null && (
+                <span className="text-xs text-slate-400">Sched: {scheduledPct}%</span>
+              )}
+              <span className="text-xs font-bold text-slate-700">Actual: {project.completion_pct}%</span>
+            </div>
           </div>
-          <ProgressBar pct={project.completion_pct} />
+          {/* Dual progress bar */}
+          <div className="relative h-4 bg-slate-100 rounded-full overflow-hidden">
+            {/* Scheduled bar (background, lighter) */}
+            {scheduledPct !== null && (
+              <div className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
+                style={{ width: scheduledPct + "%", background: scheduledPct > project.completion_pct ? "#fbbf24" : "#93c5fd", opacity: 0.5 }} />
+            )}
+            {/* Actual bar (foreground) */}
+            <div className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
+              style={{ width: project.completion_pct + "%", background: project.completion_pct >= 100 ? "#16a34a" : project.completion_pct >= (scheduledPct ?? 0) ? "#2563eb" : "#dc2626" }} />
+            {/* Percentage label */}
+            <span className="absolute right-1 top-0 bottom-0 flex items-center text-xs font-bold text-white" style={{ fontSize: 9 }}>
+              {project.completion_pct}%
+            </span>
+          </div>
+          {scheduledPct !== null && (
+            <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-sm inline-block" style={{ background: "#93c5fd" }}></span>
+                <span className="text-xs text-slate-400">Scheduled</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-sm inline-block" style={{ background: "#2563eb" }}></span>
+                <span className="text-xs text-slate-400">Actual</span>
+              </div>
+              {scheduledPct > project.completion_pct && (
+                <span className="text-xs text-red-500 font-semibold">⚠ {scheduledPct - project.completion_pct}% behind schedule</span>
+              )}
+              {project.completion_pct > scheduledPct && (
+                <span className="text-xs text-green-600 font-semibold">✓ {project.completion_pct - scheduledPct}% ahead</span>
+              )}
+            </div>
+          )}
         </div>
 
         {project.summary_text && (

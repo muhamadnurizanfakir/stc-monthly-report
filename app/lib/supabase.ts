@@ -26,6 +26,7 @@ export interface Project {
   category:       ProductCategory;
   customer:       string | null;
   model:          string | null;
+  start_date:    string | null;
   sop_date:       string | null;
   volume:         number | null;
   volume_unit:    string;
