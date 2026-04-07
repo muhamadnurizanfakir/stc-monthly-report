@@ -287,29 +287,99 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                       /* Actual / Postponed - solid bar */
                       <div title={(bar.label ?? bar.bar_type) + (bar.is_done ? " ✅ Done" : " (in progress)")}
                         style={{ position: "absolute", inset: 0, background: color, borderRadius: 3, opacity: 0.55, overflow: "visible" }}>
-                        {/* Label */}
-                        {bar.label && (isShort
-                          ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color, fontWeight: 600 }}>{bar.label}</span>
-                          : <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
-                        )}
+                        {/* Label - inside if fits, comment bubble if short */}
+                        {bar.label && (isShort ? (
+                          <div style={{
+                            position: "absolute", bottom: "100%", left: "50%",
+                            transform: "translateX(-50%)", marginBottom: 3,
+                            background: "white", border: "1.5px solid " + color,
+                            borderRadius: 4, padding: "2px 5px",
+                            fontSize: 8, fontWeight: 700, color: color,
+                            whiteSpace: "nowrap", zIndex: 20,
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.15)", pointerEvents: "none",
+                          }}>
+                            {bar.label}
+                            <div style={{
+                              position: "absolute", bottom: -5, left: "50%",
+                              transform: "translateX(-50%)", width: 0, height: 0,
+                              borderLeft: "4px solid transparent", borderRight: "4px solid transparent",
+                              borderTop: "4px solid " + color,
+                            }} />
+                          </div>
+                        ) : (
+                          <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
+                        ))}
                         {/* Done checkmark at right edge */}
                         {bar.is_done && (
                           <span style={{ position: "absolute", right: -8, top: "50%", transform: "translateY(-50%)", fontSize: 10 }}>✅</span>
                         )}
                       </div>
                     )}
-                    {/* Plan label */}
-                    {isPlan && bar.label && (isShort
-                      ? <span style={{ position: "absolute", left: "105%", top: "50%", transform: "translateY(-50%)", fontSize: 9, whiteSpace: "nowrap", color: PLAN_OUTLINE, fontWeight: 600 }}>{bar.label}</span>
-                      : <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: PLAN_OUTLINE, fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
-                    )}
+                    {/* Plan label - inside if fits, comment bubble if short */}
+                    {isPlan && bar.label && (isShort ? (
+                      <div style={{
+                        position: "absolute", bottom: "100%", left: "50%",
+                        transform: "translateX(-50%)", marginBottom: 3,
+                        background: "white", border: "1.5px solid " + PLAN_OUTLINE,
+                        borderRadius: 4, padding: "2px 5px",
+                        fontSize: 8, fontWeight: 700, color: PLAN_OUTLINE,
+                        whiteSpace: "nowrap", zIndex: 20,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.15)", pointerEvents: "none",
+                      }}>
+                        {bar.label}
+                        <div style={{
+                          position: "absolute", bottom: -5, left: "50%",
+                          transform: "translateX(-50%)", width: 0, height: 0,
+                          borderLeft: "4px solid transparent", borderRight: "4px solid transparent",
+                          borderTop: "4px solid " + PLAN_OUTLINE,
+                        }} />
+                      </div>
+                    ) : (
+                      <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: PLAN_OUTLINE, fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
+                    ))}
                   </div>
                   );
                 })}
-                {act.gantt_milestones.map(ms => (
-                  <div key={ms.id} title={(ms.label ?? ms.shape) + (ms.is_achieved ? " ✅ Achieved" : "")}
-                    style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", fontSize: 14, lineHeight: 1, color: ms.is_achieved ? "#16a34a" : undefined }}>
-                    {ms.shape === "star" ? "★" : "◆"}
+                {act.gantt_milestones.map((ms) => (
+                  <div key={ms.id}
+                    style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", lineHeight: 1, zIndex: 5 }}>
+                    {/* Big milestone symbol */}
+                    <div title={(ms.label ?? ms.shape) + (ms.is_achieved ? " ✅ Achieved" : "")}
+                      style={{ fontSize: 18, color: ms.is_achieved ? "#16a34a" : "#1e3a8a", lineHeight: 1, textAlign: "center" }}>
+                      {ms.shape === "star" ? "★" : "◆"}
+                    </div>
+                    {/* Comment bubble label */}
+                    {ms.label && (
+                      <div style={{
+                        position: "absolute",
+                        bottom: "100%",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        marginBottom: 4,
+                        background: "white",
+                        border: "1.5px solid " + (ms.is_achieved ? "#16a34a" : "#1e3a8a"),
+                        borderRadius: 4,
+                        padding: "2px 5px",
+                        fontSize: 8,
+                        fontWeight: 700,
+                        color: ms.is_achieved ? "#16a34a" : "#1e3a8a",
+                        whiteSpace: "nowrap",
+                        zIndex: 20,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                        pointerEvents: "none",
+                      }}>
+                        {ms.label}
+                        {/* Little triangle pointer */}
+                        <div style={{
+                          position: "absolute", bottom: -5, left: "50%",
+                          transform: "translateX(-50%)",
+                          width: 0, height: 0,
+                          borderLeft: "4px solid transparent",
+                          borderRight: "4px solid transparent",
+                          borderTop: "4px solid " + (ms.is_achieved ? "#16a34a" : "#1e3a8a"),
+                        }} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
