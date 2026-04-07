@@ -165,7 +165,7 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
                 </thead>
                 <tbody>
                   {items.map((item, i) => (
-                    <tr key={item.id} className={i % 2 === 0 ? "bg-blue-950/5" : "bg-blue-950/10"}>
+                    <tr key={item.id} className={i % 2 === 0 ? "bg-blue-50" : "bg-blue-100"}>
                       <td className="px-4 py-2.5 text-slate-400">{item.item_no}</td>
                       <td className="px-4 py-2.5 text-slate-600 font-medium">{item.item_category}</td>
                       <td className="px-4 py-2.5 text-slate-700">{item.issue_desc}</td>
