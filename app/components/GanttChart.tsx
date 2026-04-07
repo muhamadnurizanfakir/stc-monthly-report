@@ -44,8 +44,19 @@ const BAR_COLORS: Record<string, string> = {
 const PLAN_OUTLINE = "#1e3a8a";
 
 function buildRange(activities: GanttActivity[]) {
+  // Use a simple helper - always treat dates as MYT (UTC+8)
+  function pd(s: string) {
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(Date.UTC(y, m-1, d, 4, 0, 0)); // UTC 04:00 = MYT 12:00
+  }
+  function startOfMonth(y: number, m: number) {
+    // m is 1-based
+    if (m < 1) { y--; m = 12 + m; }
+    if (m > 12) { y++; m = m - 12; }
+    return new Date(Date.UTC(y, m-1, 1, 4, 0, 0));
+  }
+
   const allDates: number[] = [];
-  function pd(s: string) { const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y,m-1,d,4,0,0)); }
   for (const act of activities) {
     for (const bar of act.gantt_bars ?? []) {
       if (bar.start_date) allDates.push(pd(bar.start_date).getTime());
@@ -55,25 +66,34 @@ function buildRange(activities: GanttActivity[]) {
       if (ms.milestone_date) allDates.push(pd(ms.milestone_date).getTime());
     }
   }
-  const todayMYT = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
-  const [ty, tm] = todayMYT.split('-').map(Number);
-  const defStart = new Date(ty, tm - 2, 1);
-  const defEnd   = new Date(ty, tm + 10, 1);
-  const minD = allDates.length > 0 ? new Date(Math.min(...allDates)) : defStart;
-  const maxD = allDates.length > 0 ? new Date(Math.max(...allDates)) : defEnd;
-  const start = new Date(minD.getFullYear(), minD.getMonth() - 1, 1);
-  const end   = new Date(maxD.getFullYear(), maxD.getMonth() + 1,  1);
-  const months: { year: number; month: number; label: string }[] = [];
-  const cur = new Date(start);
-  while (cur <= end) {
-    months.push({ year: cur.getFullYear(), month: cur.getMonth() + 1, label: MONTH_LABELS[cur.getMonth()] });
-    cur.setMonth(cur.getMonth() + 1);
-  }
-  const totalDays = (end.getTime() - start.getTime()) / 86400000 || 1;
-  return { months, start, end, totalDays };
-}
 
-// Assign bars to swim lanes to avoid overlap
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+  const [ty, tm] = todayStr.split('-').map(Number);
+
+  const defStart = startOfMonth(ty, tm - 1);
+  const defEnd   = startOfMonth(ty, tm + 11);
+
+  const minT = allDates.length > 0 ? Math.min(...allDates) : defStart.getTime();
+  const maxT = allDates.length > 0 ? Math.max(...allDates) : defEnd.getTime();
+
+  const minDate = new Date(minT);
+  const maxDate = new Date(maxT);
+
+  const start = startOfMonth(minDate.getUTCFullYear(), minDate.getUTCMonth()); // 1 month before
+  const end   = startOfMonth(maxDate.getUTCFullYear(), maxDate.getUTCMonth() + 2); // 1 month after
+
+  const months: { year: number; month: number; label: string }[] = [];
+  const cur = new Date(start.getTime());
+  while (cur.getTime() <= end.getTime()) {
+    const y = cur.getUTCFullYear();
+    const m = cur.getUTCMonth(); // 0-based
+    months.push({ year: y, month: m + 1, label: MONTH_LABELS[m] });
+    cur.setUTCMonth(cur.getUTCMonth() + 1);
+  }
+
+  const totalDays = (end.getTime() - start.getTime()) / 86400000 || 1;
+  return { months, start, end, totalDays, pd };
+}
 function assignLanes(bars: GanttBar[]): { bar: GanttBar; lane: number }[] {
   if (!bars || bars.length === 0) return [];
 
@@ -137,21 +157,15 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
     load();
   }, [projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId]);
 
-  const { months, start, totalDays } = useMemo(() => buildRange(activities), [activities]);
+  const { months, start, totalDays, pd: pdFn } = useMemo(() => buildRange(activities), [activities]);
 
-  function parseDate(dateStr: string) {
-    // Parse as Malaysia time (UTC+8) - treat date string as MYT midnight
-    const [y, m, d] = dateStr.split('-').map(Number);
-    // Create date at noon MYT to avoid any DST/timezone edge cases
-    return new Date(Date.UTC(y, m - 1, d, 4, 0, 0)); // UTC 04:00 = MYT 12:00
-  }
   function pct(dateStr: string) {
-    const offset = (parseDate(dateStr).getTime() - start.getTime()) / 86400000;
+    const offset = (pdFn(dateStr).getTime() - start.getTime()) / 86400000;
     return Math.max(0, Math.min(100, (offset / totalDays) * 100));
   }
   function bWidth(s: string, e: string, addDay = true) {
-    const sd = Math.max(0, (parseDate(s).getTime() - start.getTime()) / 86400000);
-    const endDate = parseDate(e);
+    const sd = Math.max(0, (pdFn(s).getTime() - start.getTime()) / 86400000);
+    const endDate = pdFn(e);
     if (addDay) endDate.setDate(endDate.getDate() + 1);
     const ed = Math.min(totalDays, (endDate.getTime() - start.getTime()) / 86400000);
     return Math.max(0.5, ((ed - sd) / totalDays) * 100);
@@ -176,7 +190,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
         <div className="flex" style={{ marginLeft: LABEL_W }}>
           {Object.entries(
             months.reduce((acc, m) => {
-              const days = new Date(m.year, m.month, 0).getDate();
+              const days = new Date(Date.UTC(m.year, m.month, 0)).getUTCDate();
               acc[m.year] = (acc[m.year] ?? 0) + days;
               return acc;
             }, {} as Record<number, number>)
@@ -203,16 +217,14 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
           {/* Column grid */}
           <div className="absolute inset-0 flex pointer-events-none" style={{ marginLeft: LABEL_W }}>
             {months.map((m, i) => {
-              const daysInMonth = new Date(m.year, m.month, 0).getDate();
+              const daysInMonth = new Date(Date.UTC(m.year, m.month, 0)).getUTCDate();
               return <div key={i} style={{ width: (daysInMonth / totalDays * 100) + "%" }} className="border-r border-slate-100 h-full shrink-0" />;
             })}
           </div>
           {/* Today line */}
           {(() => {
             const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
-            const [ty2, tm2, td2] = todayStr.split('-').map(Number);
-            const todayMs = new Date(Date.UTC(ty2, tm2-1, td2, 4, 0, 0)).getTime();
-            const todayPct = ((todayMs - start.getTime()) / (totalDays * 86400000)) * 100;
+            const todayPct = pct(todayStr);
             if (todayPct <= 0 || todayPct >= 100) return null;
             return (
               <div style={{ position: "absolute", left: `calc(${todayPct}% + 0px)`, top: 0, bottom: 0, width: 2, background: "#f97316", zIndex: 10, pointerEvents: "none" }}
