@@ -274,7 +274,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 {lanesData.map(({ bar, lane }) => {
                   const isPlan = bar.bar_type === "plan";
                   const barW = bWidth(bar.start_date, bar.end_date, isPlan);
-                  const isShort = barW < 8;
+                  const isShort = barW < 5;
                   const color = BAR_COLORS[bar.bar_type] ?? "#64748b";
                   const laneTop = 2 + lane * LANE_H;
                   const laneHeight = LANE_H - 3;
@@ -290,21 +290,21 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                         {/* Label - inside if fits, comment bubble if short */}
                         {bar.label && (isShort ? (
                           <div style={{
-                            position: "absolute", bottom: "100%", left: "50%",
-                            transform: "translateX(-50%)", marginBottom: 3,
+                            position: "absolute", top: "100%", left: "50%",
+                            transform: "translateX(-50%)", marginTop: 3,
                             background: "white", border: "1.5px solid " + color,
                             borderRadius: 4, padding: "2px 5px",
                             fontSize: 8, fontWeight: 700, color: color,
                             whiteSpace: "nowrap", zIndex: 20,
                             boxShadow: "0 1px 3px rgba(0,0,0,0.15)", pointerEvents: "none",
                           }}>
-                            {bar.label}
                             <div style={{
-                              position: "absolute", bottom: -5, left: "50%",
+                              position: "absolute", top: -4, left: "50%",
                               transform: "translateX(-50%)", width: 0, height: 0,
                               borderLeft: "4px solid transparent", borderRight: "4px solid transparent",
-                              borderTop: "4px solid " + color,
+                              borderBottom: "4px solid " + color,
                             }} />
+                            {bar.label}
                           </div>
                         ) : (
                           <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: "white", fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
@@ -318,21 +318,21 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                     {/* Plan label - inside if fits, comment bubble if short */}
                     {isPlan && bar.label && (isShort ? (
                       <div style={{
-                        position: "absolute", bottom: "100%", left: "50%",
-                        transform: "translateX(-50%)", marginBottom: 3,
+                        position: "absolute", top: "100%", left: "50%",
+                        transform: "translateX(-50%)", marginTop: 3,
                         background: "white", border: "1.5px solid " + PLAN_OUTLINE,
                         borderRadius: 4, padding: "2px 5px",
                         fontSize: 8, fontWeight: 700, color: PLAN_OUTLINE,
                         whiteSpace: "nowrap", zIndex: 20,
                         boxShadow: "0 1px 3px rgba(0,0,0,0.15)", pointerEvents: "none",
                       }}>
-                        {bar.label}
                         <div style={{
-                          position: "absolute", bottom: -5, left: "50%",
+                          position: "absolute", top: -4, left: "50%",
                           transform: "translateX(-50%)", width: 0, height: 0,
                           borderLeft: "4px solid transparent", borderRight: "4px solid transparent",
-                          borderTop: "4px solid " + PLAN_OUTLINE,
+                          borderBottom: "4px solid " + PLAN_OUTLINE,
                         }} />
+                        {bar.label}
                       </div>
                     ) : (
                       <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", fontSize: 9, whiteSpace: "nowrap", overflow: "hidden", maxWidth: "calc(100% - 4px)", color: PLAN_OUTLINE, fontWeight: 600, textAlign: "center" }}>{bar.label}</span>
@@ -348,14 +348,14 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                       style={{ fontSize: 18, color: ms.is_achieved ? "#16a34a" : "#1e3a8a", lineHeight: 1, textAlign: "center" }}>
                       {ms.shape === "star" ? "★" : "◆"}
                     </div>
-                    {/* Comment bubble label */}
+                    {/* Comment bubble label - below milestone */}
                     {ms.label && (
                       <div style={{
                         position: "absolute",
-                        bottom: "100%",
+                        top: "100%",
                         left: "50%",
                         transform: "translateX(-50%)",
-                        marginBottom: 4,
+                        marginTop: 4,
                         background: "white",
                         border: "1.5px solid " + (ms.is_achieved ? "#16a34a" : "#1e3a8a"),
                         borderRadius: 4,
@@ -368,16 +368,15 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                         boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
                         pointerEvents: "none",
                       }}>
-                        {ms.label}
-                        {/* Little triangle pointer */}
                         <div style={{
-                          position: "absolute", bottom: -5, left: "50%",
+                          position: "absolute", top: -4, left: "50%",
                           transform: "translateX(-50%)",
                           width: 0, height: 0,
                           borderLeft: "4px solid transparent",
                           borderRight: "4px solid transparent",
-                          borderTop: "4px solid " + (ms.is_achieved ? "#16a34a" : "#1e3a8a"),
+                          borderBottom: "4px solid " + (ms.is_achieved ? "#16a34a" : "#1e3a8a"),
                         }} />
+                        {ms.label}
                       </div>
                     )}
                   </div>
