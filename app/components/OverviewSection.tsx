@@ -192,8 +192,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left py-2 px-4 font-semibold text-slate-500">#</th>
-                <th className="text-left py-2 px-4 font-semibold text-slate-500">Project</th>
+                                <th className="text-left py-2 px-4 font-semibold text-slate-500">Project</th>
                 <th className="text-left py-2 px-4 font-semibold text-slate-500">Category</th>
                 <th className="text-left py-2 px-4 font-semibold text-slate-500">Customer</th>
                 <th className="text-left py-2 px-4 font-semibold text-slate-500">SOP</th>
@@ -219,10 +218,8 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                 return acode.localeCompare(bcode);
               }).map((p, i) => {
                 const cat = (p as {category?: string}).category ?? 'other';
-                const code = (p as {project_code?: string}).project_code ?? '';
                 return (
                 <tr key={p.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                  <td className="py-2 px-4 text-slate-400 font-mono">{code}</td>
                   <td className="py-2 px-4 font-medium text-slate-700">{p.project_name}</td>
                   <td className="py-2 px-4">
                     <span className="px-2 py-0.5 rounded text-xs font-semibold"
