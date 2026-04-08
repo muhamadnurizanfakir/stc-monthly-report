@@ -349,7 +349,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                     style={{ left: pct(ms.milestone_date) + "%", top: "50%", transform: "translate(-50%,-50%)", position: "absolute", lineHeight: 1, zIndex: 8 }}>
                     {/* Big milestone symbol */}
                     <div title={(ms.label ?? ms.shape) + (ms.is_achieved ? " ✅ Achieved" : "")}
-                      style={{ fontSize: 16, color: ms.is_achieved ? "#16a34a" : "#334155", lineHeight: 1, textAlign: "center" }}>
+                      style={{ fontSize: LANE_H - 2, color: ms.is_achieved ? "#16a34a" : "#334155", lineHeight: 1, textAlign: "center" }}>
                       {ms.shape === "star" ? "★" : "◆"}
                     </div>
                     {/* Comment bubble label - below milestone */}
