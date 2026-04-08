@@ -26,6 +26,9 @@ interface GanttActivity {
   activity_no: number;
   activity_name: string;
   sort_order: number;
+  parent_id: string | null;
+  indent_level: number;
+  is_summary: boolean;
   gantt_bars: GanttBar[];
   gantt_milestones: GanttMilestone[];
 }
@@ -182,6 +185,36 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     fetchActivities();
   }
 
+  async function addChildActivity(parentId: string, parentSort: number) {
+    const name = prompt("Child activity name:");
+    if (!name) return;
+    const parent = activities.find(a => a.id === parentId);
+    const indentLevel = (parent?.indent_level ?? 0) + 1;
+    // Find last child of this parent or use parent sort
+    const children = activities.filter(a => a.parent_id === parentId);
+    const lastChildSort = children.length > 0 ? Math.max(...children.map(a => a.sort_order)) : parentSort;
+    // Shift activities after
+    const toShift = activities.filter(a => a.sort_order > lastChildSort && a.parent_id !== parentId);
+    for (const a of toShift) {
+      await supabase.from("gantt_activities").update({ sort_order: a.sort_order + 1 }).eq("id", a.id);
+    }
+    // Mark parent as summary
+    await supabase.from("gantt_activities").update({ is_summary: true }).eq("id", parentId);
+    const newSort = lastChildSort + 1;
+    const payload: Record<string, unknown> = {
+      activity_no: newSort, activity_name: name, sort_order: newSort,
+      parent_id: parentId, indent_level: indentLevel, is_summary: false,
+    };
+    if (projectId) payload.project_id = projectId;
+    else if (shohinProjectId) payload.shohin_project_id = shohinProjectId;
+    else if (engineeringProjectId) payload.engineering_project_id = engineeringProjectId;
+    else if (reportId) payload.report_id = reportId;
+    else if (customProjectId) payload.custom_project_id = customProjectId;
+    else if (sectionId) payload.section_id = sectionId;
+    await supabase.from("gantt_activities").insert([payload]);
+    fetchActivities();
+  }
+
   async function insertActivityAfter(afterId: string, afterSort: number) {
     const name = prompt("New activity name:");
     if (!name) return;
@@ -258,6 +291,9 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
                     className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" title="Rename">✏️</button>
                   <button onClick={e => { e.stopPropagation(); insertActivityAfter(act.id, act.sort_order); }}
                     className="ml-1 px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200" title="Insert row below">+</button>
+                  <button onClick={e => { e.stopPropagation(); addChildActivity(act.id, act.sort_order); }}
+                    className="ml-1 px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200" title="Add child row">⤵</button>
+                  {act.is_summary && <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">Summary</span>}
                   <span className="text-xs text-slate-400">
                     {act.gantt_bars.length} bar{act.gantt_bars.length !== 1 ? "s" : ""}
                     {" · "}
