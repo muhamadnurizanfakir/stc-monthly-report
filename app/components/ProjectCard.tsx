@@ -20,7 +20,11 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const milestonePct = milestoneData && milestoneData.length > 0 ? milestoneData[0].milestone_progress : null;
   const totalMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].total_milestones : 0;
   const achievedMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].achieved_milestones : 0;
-  const displayPct = milestonePct ?? project.completion_pct;
+  // If completion_pct is 0 and there are milestones, use milestone progress
+  // If completion_pct > 0, user has manually set it - use that
+  const hasManualPct = project.completion_pct > 0;
+  const displayPct = hasManualPct ? project.completion_pct : (milestonePct ?? 0);
+  const isAutoCalc = !hasManualPct && milestonePct !== null;
 
   // Calculate scheduled progress from start_date to sop_date
   const scheduledPct = (() => {
@@ -72,7 +76,7 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
                 <span className="text-xs text-slate-400">Sched: {scheduledPct}%</span>
               )}
               <span className="text-xs font-bold text-slate-700">
-                {milestonePct !== null ? `Milestone: ${milestonePct}% (${achievedMs}/${totalMs})` : `Actual: ${project.completion_pct}%`}
+                {isAutoCalc ? `Auto: ${milestonePct}% (${achievedMs}/${totalMs} milestones)` : `Manual: ${project.completion_pct}%`}
               </span>
             </div>
           </div>

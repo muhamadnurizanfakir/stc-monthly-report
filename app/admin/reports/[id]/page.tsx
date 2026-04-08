@@ -204,8 +204,8 @@ export default function ReportDetailPage() {
               <input type="date" value={form.sop_date} onChange={e => setForm({ ...form, sop_date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Volume</label>
               <input type="number" value={form.volume} onChange={e => setForm({ ...form, volume: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
-              <input type="number" min="0" max="100" value={form.completion_pct} onChange={e => setForm({ ...form, completion_pct: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion % <span className="text-slate-400 font-normal">(0 = auto from milestones)</span></label>
+              <input type="number" min="0" max="100" value={form.completion_pct} onChange={e => setForm({ ...form, completion_pct: e.target.value })} placeholder="0 for auto" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
               <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
