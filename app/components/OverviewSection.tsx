@@ -102,9 +102,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
           <h1 className="font-bold text-3xl text-slate-800">Project Overview</h1>
           <p className="text-slate-500 mt-0.5 text-sm">{reportLabel} — Functions Reporting & Presentation</p>
         </div>
-        <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold border border-orange-200">
-          FRP1 · 13-Feb-2026
-        </span>
+
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
