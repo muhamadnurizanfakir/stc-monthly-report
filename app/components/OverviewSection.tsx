@@ -84,7 +84,18 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
       avg: Math.round(sum / total),
       count: total,
       color: getCatColor(cat),
-    })).sort((a, b) => b.avg - a.avg);
+    })).sort((a, b) => {
+      const ORDER: Record<string, number> = {
+        coil_spring: 0, 'Coil Spring': 0,
+        stabilizer_bar: 1, 'Stabilizer Bar': 1,
+        'Material Change': 2, shohin: 2, material_change: 2,
+        Engineering: 3, engineering: 3,
+      };
+      const ao = ORDER[a.cat] ?? 4;
+      const bo = ORDER[b.cat] ?? 4;
+      if (ao !== bo) return ao - bo;
+      return a.cat.localeCompare(b.cat);
+    });
     return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory, allVisible, categoryProgress };
   }, [projects, shohinProjects, engineeringProjects, customProjects, sections]);
 
