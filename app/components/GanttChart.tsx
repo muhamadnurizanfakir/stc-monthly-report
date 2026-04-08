@@ -23,9 +23,6 @@ interface GanttActivity {
   activity_no: number;
   activity_name: string;
   sort_order: number;
-  parent_id: string | null;
-  indent_level: number;
-  is_summary: boolean;
   gantt_bars: GanttBar[];
   gantt_milestones: GanttMilestone[];
 }
@@ -237,12 +234,9 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 return sum + Math.max(ROW_H, nl3 * LANE_H + 4);
               }, 0);
               return (
-              <div key={act.id}
-                className="flex items-center border-b border-slate-100"
-                style={{ height: rowH2, top: topOffset2, position: "absolute", width: LABEL_W, background: act.is_summary ? "#eff6ff" : i % 2 === 0 ? "white" : "#f8fafc", paddingLeft: 8 + (act.indent_level ?? 0) * 12 }}>
-                {act.is_summary && <span className="text-slate-400 mr-1 text-xs">▼</span>}
-                {(act.indent_level ?? 0) > 0 && <span className="text-slate-300 mr-1">└</span>}
-                <span className={"text-xs truncate " + (act.is_summary ? "font-bold text-blue-800" : "text-slate-600")}>{act.activity_name}</span>
+              <div key={act.id} style={{ height: rowH2, top: topOffset2, position: "absolute", width: LABEL_W, background: i % 2 === 0 ? "white" : "#f8fafc" }}
+                className="flex items-center px-2 border-b border-slate-100">
+                <span className="text-xs text-slate-600 truncate">{act.activity_name}</span>
               </div>
               );
             })}
@@ -275,24 +269,8 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
                 return sum + Math.max(ROW_H, nl * LANE_H + 4);
               }, 0);
               return (
-              <div key={act.id} style={{ height: rowH, top: topOffset, position: "absolute", width: "100%", background: act.is_summary ? "#eff6ff" : i % 2 === 0 ? "white" : "#f8fafc" }}
+              <div key={act.id} style={{ height: rowH, top: topOffset, position: "absolute", width: "100%", background: i % 2 === 0 ? "white" : "#f8fafc" }}
                 className="border-b border-slate-100">
-                {/* Summary row - show auto-spanning bar from first to last child */}
-                {act.is_summary && (() => {
-                  const children = activities.filter(a => a.parent_id === act.id);
-                  const allChildBars = children.flatMap(c => c.gantt_bars);
-                  if (allChildBars.length === 0) return null;
-                  const starts = allChildBars.map(b => b.start_date).filter(Boolean).sort();
-                  const ends = allChildBars.map(b => b.end_date).filter(Boolean).sort();
-                  const spanStart = starts[0];
-                  const spanEnd = ends[ends.length - 1];
-                  if (!spanStart || !spanEnd) return null;
-                  const left = pct(spanStart);
-                  const width = bWidth(spanStart, spanEnd, true);
-                  return (
-                    <div style={{ position: "absolute", left: left + "%", width: width + "%", top: "35%", height: "30%", background: "#1e3a8a", borderRadius: 2, opacity: 0.3, zIndex: 1 }} />
-                  );
-                })()}
                 {lanesData.map(({ bar, lane }) => {
                   const isPlan = bar.bar_type === "plan";
                   const barW = bWidth(bar.start_date, bar.end_date, isPlan);
