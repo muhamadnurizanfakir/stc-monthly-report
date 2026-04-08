@@ -31,9 +31,9 @@ function IndividualCard({ project, sectionColor, onRefresh }: { project: CustomP
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-slate-500 font-medium">Progress</span>
-            <span className="text-xs font-bold text-slate-700">{project.completion_pct}%</span>
+            <span className="text-xs font-bold text-slate-700">{project.completion_pct ?? 0}%</span>
           </div>
-          <ProgressBar pct={project.completion_pct} />
+          <ProgressBar pct={project.completion_pct ?? 0} />
         </div>
         {project.summary_text && <p className="mt-3 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">{project.summary_text}</p>}
         <div className="mt-4 flex items-center gap-2">
@@ -95,7 +95,7 @@ function CombinedCard({ section, projects, onRefresh }: { section: Section; proj
   const hidden = projects.filter(p => p.is_visible === false);
   const display = showHidden ? projects : visible;
   const allItems = display.flatMap(p => (p.custom_action_items ?? []).map(item => ({ ...item, project_name: p.project_name }))).sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
-  const overallPct = display.length > 0 ? Math.round(display.reduce((s, p) => s + p.completion_pct, 0) / display.length) : 0;
+  const overallPct = display.length > 0 ? Math.round(display.reduce((s, p) => s + (p.completion_pct ?? 0), 0) / display.length) : 0;
   async function toggleVisibility(id: string, current: boolean) {
     await supabase.from("custom_projects").update({ is_visible: !current }).eq("id", id);
     await onRefresh();
@@ -118,9 +118,9 @@ function CombinedCard({ section, projects, onRefresh }: { section: Section; proj
                     <div className="mt-1.5">
                       <div className="flex items-center justify-between mb-0.5">
                         <span className="text-xs text-slate-400">Progress</span>
-                        <span className="text-xs font-bold text-slate-600">{p.completion_pct}%</span>
+                        <span className="text-xs font-bold text-slate-600">{p.completion_pct ?? 0}%</span>
                       </div>
-                      <ProgressBar pct={p.completion_pct} />
+                      <ProgressBar pct={p.completion_pct ?? 0} />
                     </div>
                   </div>
                   <button onClick={() => toggleVisibility(p.id, p.is_visible !== false)}

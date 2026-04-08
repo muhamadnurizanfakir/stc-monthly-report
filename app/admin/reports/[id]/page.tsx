@@ -84,12 +84,12 @@ export default function ReportDetailPage() {
   // ---- Main project CRUD ----
   function startEditProject(p: Project) {
     setEditingId(p.id); setShowForm(true);
-    setForm({ project_code: p.project_code, project_name: p.project_name, category: p.category, customer: p.customer ?? "", model: p.model ?? "", start_date: (p as {start_date?: string|null}).start_date ?? "", sop_date: p.sop_date ?? "", volume: p.volume?.toString() ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" });
+    setForm({ project_code: p.project_code, project_name: p.project_name, category: p.category, customer: p.customer ?? "", model: p.model ?? "", start_date: (p as {start_date?: string|null}).start_date ?? "", sop_date: p.sop_date ?? "", volume: p.volume?.toString() ?? "", completion_pct: p.completion_pct != null ? p.completion_pct.toString() : '', status: p.status, summary_text: p.summary_text ?? "" });
   }
   async function handleSaveProject() {
     if (!form.project_name || !form.project_code) { alert("Code and Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_code: form.project_code, project_name: form.project_name, category: form.category, customer: form.customer || null, model: form.model || null, start_date: (form as {start_date?: string}).start_date || null, sop_date: form.sop_date || null, volume: form.volume ? parseInt(form.volume) : null, completion_pct: parseInt(form.completion_pct), status: form.status, summary_text: form.summary_text || null };
+    const payload = { report_id: reportId, project_code: form.project_code, project_name: form.project_name, category: form.category, customer: form.customer || null, model: form.model || null, start_date: (form as {start_date?: string}).start_date || null, sop_date: form.sop_date || null, volume: form.volume ? parseInt(form.volume) : null, completion_pct: form.completion_pct === '' || form.completion_pct === null ? null : parseInt(form.completion_pct), status: form.status, summary_text: form.summary_text || null };
     if (editingId) await supabase.from("projects").update(payload).eq("id", editingId);
     else await supabase.from("projects").insert([payload]);
     setSuccessMsg(editingId ? "Project updated!" : "Project added!"); setShowForm(false); setEditingId(null);
@@ -557,7 +557,7 @@ export default function ReportDetailPage() {
                                 <button onClick={() => setExpandedGantt(expandedGantt === p.id ? null : p.id)}
                                   className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs hover:bg-amber-100">📊</button>
                               )}
-                              <button onClick={() => { setEditingCustomId(p.id); setCustomForm({ project_code: p.project_code ?? "", project_name: p.project_name, customer: p.customer ?? "", category: (p as {category?: string|null}).category ?? "", sop_date: (p as {sop_date?: string|null}).sop_date ?? "", completion_pct: p.completion_pct.toString(), status: p.status, summary_text: p.summary_text ?? "" }); setExpandedActions("custom_form_" + sec.id); }}
+                              <button onClick={() => { setEditingCustomId(p.id); setCustomForm({ project_code: p.project_code ?? "", project_name: p.project_name, customer: p.customer ?? "", category: (p as {category?: string|null}).category ?? "", sop_date: (p as {sop_date?: string|null}).sop_date ?? "", completion_pct: p.completion_pct != null ? p.completion_pct.toString() : '', status: p.status, summary_text: p.summary_text ?? "" }); setExpandedActions("custom_form_" + sec.id); }}
                                 className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️</button>
                               <button onClick={async () => { await supabase.from("custom_projects").update({ is_visible: !p.is_visible }).eq("id", p.id); fetchData(); }}
                                 className={"px-2 py-1 rounded text-xs font-semibold " + (p.is_visible ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200")}>
@@ -585,7 +585,7 @@ export default function ReportDetailPage() {
 
 function ActionItemsPanel({ projectId, items, table, fkField, onRefresh }: {
   projectId: string;
-  items: { id: string; item_no?: number | null; item_category?: string | null; issue_desc: string; action_plan: string | null; completion_pct: number; due_date: string | null; is_info_only: boolean }[];
+  items: { id: string; item_no?: number | null; item_category?: string | null; issue_desc: string; action_plan: string | null; completion_pct: number | null; due_date: string | null; is_info_only: boolean }[];
   table: string;
   fkField: string;
   onRefresh: () => void;
@@ -597,14 +597,14 @@ function ActionItemsPanel({ projectId, items, table, fkField, onRefresh }: {
 
   function startEdit(item: typeof items[0]) {
     setEditingId(item.id);
-    setForm({ item_no: item.item_no?.toString() ?? "", item_category: (item as {item_category?: string | null}).item_category ?? "", issue_desc: item.issue_desc, action_plan: item.action_plan ?? "", completion_pct: item.completion_pct.toString(), due_date: item.due_date ?? "", is_info_only: item.is_info_only });
+    setForm({ item_no: item.item_no?.toString() ?? "", item_category: (item as {item_category?: string | null}).item_category ?? "", issue_desc: item.issue_desc, action_plan: item.action_plan ?? "", completion_pct: item.completion_pct?.toString() ?? '', due_date: item.due_date ?? "", is_info_only: item.is_info_only });
     setShowForm(true);
   }
 
   async function handleSave() {
     if (!form.issue_desc) { alert("Issue description required"); return; }
     setSaving(true);
-    const payload: Record<string, unknown> = { [fkField]: projectId, item_no: form.item_no ? parseInt(form.item_no) : null, issue_desc: form.issue_desc, action_plan: form.action_plan || null, completion_pct: parseInt(form.completion_pct), due_date: form.due_date || null, is_info_only: form.is_info_only };
+    const payload: Record<string, unknown> = { [fkField]: projectId, item_no: form.item_no ? parseInt(form.item_no) : null, issue_desc: form.issue_desc, action_plan: form.action_plan || null, completion_pct: form.completion_pct === '' || form.completion_pct === null ? null : parseInt(form.completion_pct), due_date: form.due_date || null, is_info_only: form.is_info_only };
     if (table === "action_items" || table === "shohin_action_items") payload.item_category = form.item_category || null;
     if (editingId) await supabase.from(table).update(payload).eq("id", editingId);
     else await supabase.from(table).insert([payload]);

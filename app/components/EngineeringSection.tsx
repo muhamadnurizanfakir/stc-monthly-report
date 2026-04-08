@@ -33,9 +33,9 @@ function EngineeringCard({ project, onRefresh }: { project: EngineeringProject; 
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-slate-500 font-medium">Overall Progress</span>
-            <span className="text-xs font-bold text-slate-700">{project.completion_pct}%</span>
+            <span className="text-xs font-bold text-slate-700">{project.completion_pct ?? 0}%</span>
           </div>
-          <ProgressBar pct={project.completion_pct} />
+          <ProgressBar pct={project.completion_pct ?? 0} />
         </div>
         <div className="mt-4 flex items-center gap-2">
           <button onClick={toggleVisibility}

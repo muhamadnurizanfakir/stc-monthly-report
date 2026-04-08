@@ -56,9 +56,9 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
     ];
     const total     = allVisible.length;
     const onTrack   = allVisible.filter(p => p.status === 'on_track').length;
-    const completed = allVisible.filter(p => p.completion_pct === 100).length;
+    const completed = allVisible.filter(p => (p.completion_pct ?? 0) === 100).length;
     const delayed   = allVisible.filter(p => p.status === 'delayed' || p.status === 'at_risk').length;
-    const avgPct    = Math.round(allVisible.reduce((s, p) => s + p.completion_pct, 0) / (allVisible.length || 1));
+    const avgPct    = Math.round(allVisible.reduce((s, p) => s + (p.completion_pct ?? 0), 0) / (allVisible.length || 1));
     const statusDist = [
       { name: 'On Track',  value: onTrack,   color: '#16a34a' },
       { name: 'Completed', value: completed,  color: '#2563eb' },
@@ -76,7 +76,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
         const cat = (p as {category?: string}).category ?? 'Other';
         if (!acc[cat]) acc[cat] = { total: 0, sum: 0 };
         acc[cat].total += 1;
-        acc[cat].sum += p.completion_pct;
+        acc[cat].sum += (p.completion_pct ?? 0);
         return acc;
       }, {} as Record<string, { total: number; sum: number }>)
     ).map(([cat, { total, sum }]) => ({
@@ -243,7 +243,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                     {(() => { const s = (p as {sop_date?: string|null}).sop_date; return s ? new Date(s).toLocaleDateString('en-MY', { month: 'short', year: '2-digit' }) : '—'; })()}
                   </td>
                   <td className="py-2 px-4 w-36">
-                    <ProgressBar pct={p.completion_pct} />
+                    <ProgressBar pct={p.completion_pct ?? 0} />
                   </td>
                   <td className="py-2 px-4"><StatusBadge status={p.status} /></td>
                 </tr>

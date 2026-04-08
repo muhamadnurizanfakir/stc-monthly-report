@@ -30,7 +30,7 @@ export interface Project {
   sop_date:       string | null;
   volume:         number | null;
   volume_unit:    string;
-  completion_pct: number;
+  completion_pct: number | null;
   status:         ProjectStatus;
   summary_text:   string | null;
   mass_prod_date: string | null;
@@ -57,7 +57,7 @@ export interface ActionItem {
   item_category:  string | null;
   issue_desc:     string;
   action_plan:    string | null;
-  completion_pct: number;
+  completion_pct: number | null;
   due_date:       string | null;
   is_info_only:   boolean;
 }
@@ -70,7 +70,7 @@ export interface ShohinProject {
   customer:       string | null;
   sop_date:       string | null;
   category:       string | null;
-  completion_pct: number;
+  completion_pct: number | null;
   status:         ProjectStatus;
   summary_text:   string | null;
   is_visible:     boolean;
@@ -84,7 +84,7 @@ export interface ShohinActionItem {
   item_category:  string | null;
   issue_desc:     string;
   action_plan:    string | null;
-  completion_pct: number;
+  completion_pct: number | null;
   due_date:       string | null;
   is_info_only:   boolean;
 }
@@ -97,7 +97,7 @@ export interface EngineeringProject {
   model:          string | null;
   sop_date:       string | null;
   volume:         number | null;
-  completion_pct: number;
+  completion_pct: number | null;
   status:         ProjectStatus;
   category:       string | null;
   summary_text:   string | null;
@@ -112,7 +112,7 @@ export interface EngineeringActionItem {
   item_category:  string | null;
   issue_desc:     string;
   action_plan:    string | null;
-  completion_pct: number;
+  completion_pct: number | null;
   due_date:       string | null;
   is_info_only:   boolean;
 }
@@ -175,7 +175,7 @@ export interface CustomProject {
   customer:       string | null;
   sop_date:       string | null;
   model:          string | null;
-  completion_pct: number;
+  completion_pct: number | null;
   status:         ProjectStatus;
   category:       string | null;
   summary_text:   string | null;

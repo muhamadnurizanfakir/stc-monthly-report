@@ -20,10 +20,10 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const milestonePct = milestoneData && milestoneData.length > 0 ? milestoneData[0].milestone_progress : null;
   const totalMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].total_milestones : 0;
   const achievedMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].achieved_milestones : 0;
-  // If completion_pct is 0 and there are milestones, use milestone progress
-  // If completion_pct > 0, user has manually set it - use that
-  const hasManualPct = project.completion_pct > 0;
-  const displayPct = hasManualPct ? project.completion_pct : (milestonePct ?? 0);
+  // null = auto from milestones, any number = manual override
+  const manualPct = (project as {completion_pct: number|null}).completion_pct;
+  const hasManualPct = manualPct !== null && manualPct !== undefined;
+  const displayPct = hasManualPct ? (manualPct ?? 0) : (milestonePct ?? 0);
   const isAutoCalc = !hasManualPct && milestonePct !== null;
 
   // Calculate scheduled progress from start_date to sop_date
@@ -76,7 +76,7 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
                 <span className="text-xs text-slate-400">Sched: {scheduledPct}%</span>
               )}
               <span className="text-xs font-bold text-slate-700">
-                {isAutoCalc ? `Auto: ${milestonePct}% (${achievedMs}/${totalMs} milestones)` : `Manual: ${project.completion_pct}%`}
+                {isAutoCalc ? `Auto: ${milestonePct}% (${achievedMs}/${totalMs} milestones)` : `Manual: ${project.completion_pct ?? 0}%`}
               </span>
             </div>
           </div>
@@ -85,14 +85,14 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
             {/* Scheduled bar (background, lighter) */}
             {scheduledPct !== null && (
               <div className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
-                style={{ width: scheduledPct + "%", background: scheduledPct > project.completion_pct ? "#fbbf24" : "#93c5fd", opacity: 0.5 }} />
+                style={{ width: scheduledPct + "%", background: scheduledPct > (project.completion_pct ?? 0) ? "#fbbf24" : "#93c5fd", opacity: 0.5 }} />
             )}
             {/* Actual bar (foreground) */}
             <div className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
               style={{ width: displayPct + "%", background: displayPct >= 100 ? "#16a34a" : displayPct >= (scheduledPct ?? 0) ? "#2563eb" : "#dc2626" }} />
             {/* Percentage label */}
             <span className="absolute right-1 top-0 bottom-0 flex items-center text-xs font-bold text-white" style={{ fontSize: 9 }}>
-              {project.completion_pct}%
+              {project.completion_pct ?? 0}%
             </span>
           </div>
           {scheduledPct !== null && (
