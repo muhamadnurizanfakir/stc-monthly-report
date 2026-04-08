@@ -15,6 +15,13 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const [expanded, setExpanded] = useState(false);
   const items = [...(project.action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
 
+  // Get milestone-based progress
+  const milestoneData = (project as {project_milestone_progress?: {milestone_progress: number|null; total_milestones: number; achieved_milestones: number}[]}).project_milestone_progress;
+  const milestonePct = milestoneData && milestoneData.length > 0 ? milestoneData[0].milestone_progress : null;
+  const totalMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].total_milestones : 0;
+  const achievedMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].achieved_milestones : 0;
+  const displayPct = milestonePct ?? project.completion_pct;
+
   // Calculate scheduled progress from start_date to sop_date
   const scheduledPct = (() => {
     const startD = (project as {start_date?: string|null}).start_date;
@@ -64,7 +71,9 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
               {scheduledPct !== null && (
                 <span className="text-xs text-slate-400">Sched: {scheduledPct}%</span>
               )}
-              <span className="text-xs font-bold text-slate-700">Actual: {project.completion_pct}%</span>
+              <span className="text-xs font-bold text-slate-700">
+                {milestonePct !== null ? `Milestone: ${milestonePct}% (${achievedMs}/${totalMs})` : `Actual: ${project.completion_pct}%`}
+              </span>
             </div>
           </div>
           {/* Dual progress bar */}
@@ -76,7 +85,7 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
             )}
             {/* Actual bar (foreground) */}
             <div className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
-              style={{ width: project.completion_pct + "%", background: project.completion_pct >= 100 ? "#16a34a" : project.completion_pct >= (scheduledPct ?? 0) ? "#2563eb" : "#dc2626" }} />
+              style={{ width: displayPct + "%", background: displayPct >= 100 ? "#16a34a" : displayPct >= (scheduledPct ?? 0) ? "#2563eb" : "#dc2626" }} />
             {/* Percentage label */}
             <span className="absolute right-1 top-0 bottom-0 flex items-center text-xs font-bold text-white" style={{ fontSize: 9 }}>
               {project.completion_pct}%
@@ -92,11 +101,11 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
                 <span className="w-2 h-2 rounded-sm inline-block" style={{ background: "#2563eb" }}></span>
                 <span className="text-xs text-slate-400">Actual</span>
               </div>
-              {scheduledPct > project.completion_pct && (
-                <span className="text-xs text-red-500 font-semibold">⚠ {scheduledPct - project.completion_pct}% behind schedule</span>
+              {scheduledPct > displayPct && (
+                <span className="text-xs text-red-500 font-semibold">⚠ {scheduledPct - displayPct}% behind schedule</span>
               )}
-              {project.completion_pct > scheduledPct && (
-                <span className="text-xs text-green-600 font-semibold">✓ {project.completion_pct - scheduledPct}% ahead</span>
+              {displayPct > scheduledPct && (
+                <span className="text-xs text-green-600 font-semibold">✓ {displayPct - scheduledPct}% ahead</span>
               )}
             </div>
           )}

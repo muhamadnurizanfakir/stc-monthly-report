@@ -37,6 +37,7 @@ export interface Project {
   is_visible:     boolean;
   action_items?:  ActionItem[];
   milestones?:    Milestone[];
+  milestone_progress?: number | null;
 }
 
 export interface Milestone {
@@ -130,7 +131,7 @@ export async function getLatestReport(): Promise<Report | null> {
 export async function getProjectsByReport(reportId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
-    .select('*, action_items(*), milestones(*)')
+    .select('*, action_items(*), milestones(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)')
     .eq('report_id', reportId)
     .order('project_code');
   if (error) { console.error(error); return []; }
