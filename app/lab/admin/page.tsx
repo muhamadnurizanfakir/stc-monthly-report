@@ -45,6 +45,7 @@ export default function LabAdminPage() {
   const [documents, setDocuments] = useState<LabDocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState('');
+  const [labUser, setLabUser] = useState<{name:string;role:string;designation?:string} | null>(null);
   const [authed, setAuthed] = useState(false);
   const [authError, setAuthError] = useState('');
 
@@ -76,6 +77,17 @@ export default function LabAdminPage() {
 
   useEffect(() => {
     const auth = sessionStorage.getItem('stc_lab_admin_auth');
+    const user = sessionStorage.getItem('stc_lab_user');
+    if (user) {
+      const parsed = JSON.parse(user);
+      setLabUser(parsed);
+      // Staff roles auto-auth to admin
+      if (['lab_admin','lab_engineer','lab_reviewer','lab_approver'].includes(parsed.role)) {
+        setAuthed(true);
+        fetchAll();
+        return;
+      }
+    }
     if (auth === 'true') { setAuthed(true); fetchAll(); }
     else setLoading(false);
   }, [fetchAll]);
@@ -155,7 +167,14 @@ export default function LabAdminPage() {
         <div className="flex items-center gap-3">
           <a href="/lab" className="text-blue-300 hover:text-white text-xs">← Lab</a>
           <span className="text-blue-700">|</span>
-          <span className="text-white font-bold text-sm">⚙️ Lab Admin Panel</span>
+          <div className="flex items-center gap-3">
+            <span className="text-white font-bold text-sm">⚙️ Lab Admin Panel</span>
+            {labUser && (
+              <span className="px-2 py-0.5 bg-green-700 text-green-100 rounded-full text-xs font-semibold">
+                {labUser.role?.replace('lab_','').replace('_',' ')} — {labUser.name}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={fetchAll} className="px-3 py-1.5 bg-blue-800 hover:bg-blue-700 text-white rounded-lg text-xs">🔄 Refresh</button>

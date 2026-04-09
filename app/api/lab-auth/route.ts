@@ -7,31 +7,31 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
-  const { type, password, email, pin, userId, registerEmail, registerPassword, registerName, companyId } = await req.json();
+  const body = await req.json();
+  const { type } = body;
 
-  // 1. Check lab portal password
+  // 1. Check lab portal password (for admin panel access)
   if (type === 'portal_password') {
     const { data } = await supabase.from('portal_settings').select('value').eq('key', 'lab_password').single();
-    if (data?.value === password) return NextResponse.json({ ok: true });
+    if (data?.value === body.password) return NextResponse.json({ ok: true });
     return NextResponse.json({ ok: false, error: 'Wrong password' }, { status: 401 });
   }
 
-  // 2. Internal user PIN login
+  // 2. Internal user PIN login (from ts_users - as customer)
   if (type === 'internal_pin') {
     const { data: user } = await supabase.from('ts_users')
-      .select('id, name, employee_id, hourly_rate, default_factory')
-      .eq('id', userId).eq('pin', pin).eq('is_active', true).maybeSingle();
+      .select('id, name, employee_id')
+      .eq('id', body.userId).eq('pin', body.pin).eq('is_active', true).maybeSingle();
     if (!user) return NextResponse.json({ ok: false, error: 'Wrong PIN' }, { status: 401 });
     
-    // Check if lab_user exists for this ts_user
+    // Check if lab_user exists for this ts_user, auto-create if not
     let { data: labUser } = await supabase.from('lab_users')
-      .select('*').eq('employee_id', user.employee_id ?? user.id).maybeSingle();
+      .select('*').eq('employee_id', user.employee_id ?? user.id).eq('user_type', 'internal').maybeSingle();
     
     if (!labUser) {
-      // Auto-create lab user for internal staff
       const { data: newLabUser } = await supabase.from('lab_users').insert([{
         name: user.name,
-        email: user.employee_id + '@stc.internal',
+        email: (user.employee_id ?? user.id) + '@stc.internal',
         role: 'lab_customer',
         employee_id: user.employee_id,
         user_type: 'internal',
@@ -40,36 +40,66 @@ export async function POST(req: NextRequest) {
       labUser = newLabUser;
     }
     
-    return NextResponse.json({ ok: true, user: { ...user, labUserId: labUser?.id, type: 'internal' } });
+    return NextResponse.json({ ok: true, user: { 
+      id: labUser?.id, name: user.name, 
+      email: labUser?.email, role: labUser?.role ?? 'lab_customer',
+      user_type: 'internal', labUserId: labUser?.id 
+    }});
   }
 
-  // 3. External user login
+  // 3. Staff login (lab engineers, reviewers, approvers)
+  if (type === 'staff_login') {
+    const { data: labUser } = await supabase.from('lab_users')
+      .select('*').eq('email', body.email).eq('user_type', 'staff').eq('is_active', true).maybeSingle();
+    if (!labUser) return NextResponse.json({ ok: false, error: 'Staff account not found' }, { status: 401 });
+    if (!labUser.password_hash) return NextResponse.json({ ok: false, error: 'Password not set. Contact admin.' }, { status: 401 });
+    if (labUser.password_hash !== body.password) return NextResponse.json({ ok: false, error: 'Wrong password' }, { status: 401 });
+
+    // Log session
+    await supabase.from('lab_staff_sessions').insert([{ user_id: labUser.id }]);
+    
+    return NextResponse.json({ ok: true, user: {
+      id: labUser.id, name: labUser.name, email: labUser.email,
+      role: labUser.role, designation: labUser.designation,
+      user_type: 'staff', labUserId: labUser.id,
+    }});
+  }
+
+  // 4. External user login
   if (type === 'external_login') {
     const { data: labUser } = await supabase.from('lab_users')
-      .select('*').eq('email', email).eq('user_type', 'external').eq('is_active', true).maybeSingle();
-    if (!labUser) return NextResponse.json({ ok: false, error: 'User not found' }, { status: 401 });
-    if (labUser.password_hash !== password) return NextResponse.json({ ok: false, error: 'Wrong password' }, { status: 401 });
-    return NextResponse.json({ ok: true, user: { ...labUser, type: 'external' } });
+      .select('*').eq('email', body.email).eq('user_type', 'external').eq('is_active', true).maybeSingle();
+    if (!labUser) return NextResponse.json({ ok: false, error: 'Account not found' }, { status: 401 });
+    if (labUser.password_hash !== body.password) return NextResponse.json({ ok: false, error: 'Wrong password' }, { status: 401 });
+    return NextResponse.json({ ok: true, user: {
+      id: labUser.id, name: labUser.name, email: labUser.email,
+      role: labUser.role, company_id: labUser.company_id,
+      user_type: 'external', labUserId: labUser.id,
+    }});
   }
 
-  // 4. External user registration
+  // 5. External user registration
   if (type === 'external_register') {
-    const { data: existing } = await supabase.from('lab_users').select('id').eq('email', registerEmail).maybeSingle();
+    const { data: existing } = await supabase.from('lab_users')
+      .select('id').eq('email', body.registerEmail).maybeSingle();
     if (existing) return NextResponse.json({ ok: false, error: 'Email already registered' }, { status: 400 });
     
     const { data: newUser, error } = await supabase.from('lab_users').insert([{
-      name: registerName,
-      email: registerEmail,
-      password_hash: registerPassword, // In production use bcrypt
+      name: body.registerName,
+      email: body.registerEmail,
+      password_hash: body.registerPassword,
       role: 'lab_customer',
-      company_id: companyId || null,
+      company_id: body.companyId || null,
       user_type: 'external',
       is_active: true,
     }]).select().single();
     
     if (error) return NextResponse.json({ ok: false, error: 'Registration failed' }, { status: 500 });
-    return NextResponse.json({ ok: true, user: { ...newUser, type: 'external' } });
+    return NextResponse.json({ ok: true, user: {
+      id: newUser.id, name: newUser.name, email: newUser.email,
+      role: newUser.role, user_type: 'external', labUserId: newUser.id,
+    }});
   }
 
-  return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 });
+  return NextResponse.json({ ok: false, error: 'Invalid request type' }, { status: 400 });
 }

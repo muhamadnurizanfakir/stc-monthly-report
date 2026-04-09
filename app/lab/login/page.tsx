@@ -8,7 +8,15 @@ interface TsUser {
   employee_id: string | null;
 }
 
-type LoginMode = 'select' | 'internal_user' | 'internal_pin' | 'external';
+type LoginMode = 'select' | 'internal_user' | 'internal_pin' | 'staff' | 'external';
+
+const ROLE_LABELS: Record<string, string> = {
+  lab_admin: '⚙️ Lab Administrator',
+  lab_engineer: '🔬 Lab Engineer',
+  lab_reviewer: '📋 Lab Reviewer',
+  lab_approver: '✅ Lab Approver',
+  lab_customer: '👤 Customer',
+};
 
 export default function LabLoginPage() {
   const [mode, setMode] = useState<LoginMode>('select');
@@ -18,6 +26,13 @@ export default function LabLoginPage() {
   const [pinError, setPinError] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Staff login
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const [staffError, setStaffError] = useState('');
+
+  // External login/register
   const [extEmail, setExtEmail] = useState('');
   const [extPassword, setExtPassword] = useState('');
   const [extError, setExtError] = useState('');
@@ -30,10 +45,8 @@ export default function LabLoginPage() {
   const [regCompany, setRegCompany] = useState('');
 
   useEffect(() => {
-    // Check if already logged in
     const user = sessionStorage.getItem('stc_lab_user');
     if (user) window.location.href = '/lab/dashboard';
-    
     supabase.from('ts_users').select('id, name, employee_id').eq('is_active', true).order('name')
       .then(({ data }) => setTsUsers(data ?? []));
     supabase.from('lab_companies').select('id, company_name').eq('is_active', true).eq('company_type', 'external').order('company_name')
@@ -44,18 +57,30 @@ export default function LabLoginPage() {
     if (!selectedUser || pin.length !== 4) return;
     setLoading(true);
     const res = await fetch('/api/lab-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'internal_pin', userId: selectedUser.id, pin }),
     });
     const data = await res.json();
     if (data.ok) {
       sessionStorage.setItem('stc_lab_user', JSON.stringify(data.user));
       window.location.href = '/lab/dashboard';
-    } else {
-      setPinError('Wrong PIN. Try again.');
-      setPin('');
-    }
+    } else { setPinError('Wrong PIN. Try again.'); setPin(''); }
+    setLoading(false);
+  }
+
+  async function handleStaffLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true); setStaffError('');
+    const res = await fetch('/api/lab-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'staff_login', email: staffEmail, password: staffPassword }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      sessionStorage.setItem('stc_lab_user', JSON.stringify(data.user));
+      // Staff goes to admin panel
+      window.location.href = data.user.role === 'lab_customer' ? '/lab/dashboard' : '/lab/admin';
+    } else { setStaffError(data.error ?? 'Login failed'); }
     setLoading(false);
   }
 
@@ -63,17 +88,14 @@ export default function LabLoginPage() {
     e.preventDefault();
     setLoading(true); setExtError('');
     const res = await fetch('/api/lab-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'external_login', email: extEmail, password: extPassword }),
     });
     const data = await res.json();
     if (data.ok) {
       sessionStorage.setItem('stc_lab_user', JSON.stringify(data.user));
       window.location.href = '/lab/dashboard';
-    } else {
-      setExtError(data.error ?? 'Login failed');
-    }
+    } else { setExtError(data.error ?? 'Login failed'); }
     setLoading(false);
   }
 
@@ -81,17 +103,14 @@ export default function LabLoginPage() {
     e.preventDefault();
     setLoading(true); setRegError('');
     const res = await fetch('/api/lab-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'external_register', registerName: regName, registerEmail: regEmail, registerPassword: regPassword, companyId: regCompany || null }),
     });
     const data = await res.json();
     if (data.ok) {
       sessionStorage.setItem('stc_lab_user', JSON.stringify(data.user));
       window.location.href = '/lab/dashboard';
-    } else {
-      setRegError(data.error ?? 'Registration failed');
-    }
+    } else { setRegError(data.error ?? 'Registration failed'); }
     setLoading(false);
   }
 
@@ -101,34 +120,49 @@ export default function LabLoginPage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-8">
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-2xl bg-purple-700 flex items-center justify-center text-2xl shadow-xl mx-auto mb-3">🔬</div>
           <h1 className="text-xl font-bold text-slate-800">Lab Testing Portal</h1>
-          <p className="text-slate-500 text-xs mt-1">Sign in to submit RFQ and track your tests</p>
+          <p className="text-slate-500 text-xs mt-1">Sapura Technical Centre</p>
         </div>
 
         {/* Mode Selection */}
         {mode === 'select' && (
           <div className="bg-white rounded-2xl shadow-xl p-6 space-y-3">
-            <h2 className="font-bold text-slate-700 mb-4">How would you like to sign in?</h2>
+            <h2 className="font-bold text-slate-700 mb-4 text-sm">Select your login type:</h2>
+            
+            {/* Internal Staff (customer) */}
             <button onClick={() => setMode('internal_user')}
               className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all text-left">
-              <div className="w-10 h-10 rounded-xl bg-blue-950 flex items-center justify-center text-white text-lg">🏢</div>
+              <div className="w-10 h-10 rounded-xl bg-blue-950 flex items-center justify-center text-white text-lg shrink-0">🏢</div>
               <div>
-                <p className="font-bold text-slate-800 text-sm">Internal Staff</p>
-                <p className="text-xs text-slate-500">STC / Sapura group employees — use your PIN</p>
+                <p className="font-bold text-slate-800 text-sm">Internal Staff (Customer)</p>
+                <p className="text-xs text-slate-500">STC / Sapura employees — submit RFQ using PIN</p>
               </div>
             </button>
+
+            {/* Lab Technical Staff */}
+            <button onClick={() => setMode('staff')}
+              className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 hover:border-green-400 hover:bg-green-50 transition-all text-left">
+              <div className="w-10 h-10 rounded-xl bg-green-700 flex items-center justify-center text-white text-lg shrink-0">🔬</div>
+              <div>
+                <p className="font-bold text-slate-800 text-sm">Lab Technical Staff</p>
+                <p className="text-xs text-slate-500">Engineers, reviewers, approvers — email & password</p>
+              </div>
+            </button>
+
+            {/* External Customer */}
             <button onClick={() => setMode('external')}
               className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 hover:border-purple-400 hover:bg-purple-50 transition-all text-left">
-              <div className="w-10 h-10 rounded-xl bg-purple-700 flex items-center justify-center text-white text-lg">🌐</div>
+              <div className="w-10 h-10 rounded-xl bg-purple-700 flex items-center justify-center text-white text-lg shrink-0">🌐</div>
               <div>
                 <p className="font-bold text-slate-800 text-sm">External Customer</p>
-                <p className="text-xs text-slate-500">External companies — use email & password</p>
+                <p className="text-xs text-slate-500">External companies — email & password or register</p>
               </div>
             </button>
+
             <a href="/lab" className="block text-center text-slate-400 text-xs mt-2 hover:text-slate-600">← Back to Lab Services</a>
           </div>
         )}
@@ -137,7 +171,7 @@ export default function LabLoginPage() {
         {mode === 'internal_user' && (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="bg-blue-950 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-white font-bold">Select Your Name</h2>
+              <h2 className="text-white font-bold text-sm">Select Your Name</h2>
               <button onClick={() => setMode('select')} className="text-blue-300 text-xs hover:text-white">← Back</button>
             </div>
             <div className="p-4">
@@ -166,7 +200,7 @@ export default function LabLoginPage() {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="bg-blue-950 px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-white font-bold">Hello, {selectedUser.name}!</h2>
+                <h2 className="text-white font-bold text-sm">Hello, {selectedUser.name}!</h2>
                 <p className="text-blue-300 text-xs">Enter your 4-digit PIN</p>
               </div>
               <button onClick={() => { setMode('internal_user'); setPin(''); setPinError(''); }} className="text-blue-300 text-xs hover:text-white">← Back</button>
@@ -190,9 +224,48 @@ export default function LabLoginPage() {
                 ))}
               </div>
               <button onClick={handlePinSubmit} disabled={pin.length !== 4 || loading}
-                className="w-full py-3 bg-blue-950 text-white rounded-xl font-bold text-sm disabled:opacity-40 hover:bg-blue-900 transition-colors">
+                className="w-full py-3 bg-blue-950 text-white rounded-xl font-bold text-sm disabled:opacity-40 hover:bg-blue-900">
                 {loading ? 'Signing in...' : '✓ Confirm PIN'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Lab Staff Login */}
+        {mode === 'staff' && (
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-green-700 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-white font-bold text-sm">Lab Technical Staff</h2>
+                <p className="text-green-200 text-xs">Engineers · Reviewers · Approvers</p>
+              </div>
+              <button onClick={() => setMode('select')} className="text-green-200 text-xs hover:text-white">← Back</button>
+            </div>
+            <div className="p-6">
+              {/* Role indicators */}
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                {Object.entries(ROLE_LABELS).filter(([k]) => k !== 'lab_customer').map(([, label]) => (
+                  <div key={label} className="px-2 py-1.5 bg-slate-50 rounded-lg text-xs text-slate-600 text-center">{label}</div>
+                ))}
+              </div>
+              <form onSubmit={handleStaffLogin} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Staff Email</label>
+                  <input type="email" value={staffEmail} onChange={e => setStaffEmail(e.target.value)} required
+                    placeholder="engineer@stc.com" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                  <input type="password" value={staffPassword} onChange={e => setStaffPassword(e.target.value)} required
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+                </div>
+                {staffError && <p className="text-red-500 text-xs">{staffError}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-bold text-sm disabled:opacity-50">
+                  {loading ? 'Signing in...' : 'Sign In →'}
+                </button>
+              </form>
+              <p className="text-xs text-slate-400 text-center mt-3">Contact lab admin to set up your account</p>
             </div>
           </div>
         )}
@@ -201,7 +274,7 @@ export default function LabLoginPage() {
         {mode === 'external' && (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="bg-purple-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-white font-bold">{showRegister ? 'Create Account' : 'External Customer Login'}</h2>
+              <h2 className="text-white font-bold text-sm">{showRegister ? 'Create Account' : 'External Customer'}</h2>
               <button onClick={() => setMode('select')} className="text-purple-200 text-xs hover:text-white">← Back</button>
             </div>
             <div className="p-6">
@@ -223,7 +296,7 @@ export default function LabLoginPage() {
                     {loading ? 'Signing in...' : 'Sign In →'}
                   </button>
                   <button type="button" onClick={() => setShowRegister(true)}
-                    className="w-full text-xs text-slate-500 hover:text-purple-700">
+                    className="w-full text-xs text-slate-500 hover:text-purple-700 text-center">
                     Don&apos;t have an account? Register here
                   </button>
                 </form>
@@ -258,7 +331,7 @@ export default function LabLoginPage() {
                     {loading ? 'Creating account...' : 'Create Account →'}
                   </button>
                   <button type="button" onClick={() => setShowRegister(false)}
-                    className="w-full text-xs text-slate-500 hover:text-purple-700">
+                    className="w-full text-xs text-slate-500 hover:text-purple-700 text-center">
                     Already have an account? Sign in
                   </button>
                 </form>
