@@ -31,8 +31,9 @@ export default function LabDashboard() {
   const [rfqs, setRfqs] = useState<LabRFQ[]>([]);
   const [projects, setProjects] = useState<LabProject[]>([]);
   const [documents, setDocuments] = useState<LabDocumentSummary[]>([]);
+  const [issuedReports, setIssuedReports] = useState<{id:string;report_number:string;report_title:string;issued_at:string|null;file_url:string|null;lab_projects?:{project_name:string;project_number:string}}[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'rfq' | 'projects' | 'documents'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'rfq' | 'projects' | 'documents' | 'reports'>('overview');
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [attachCounts, setAttachCounts] = useState<Record<string, number>>({});
 
@@ -68,11 +69,12 @@ export default function LabDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [{ data: rfqData }, { data: projData }, { data: docData }, { data: attachData }] = await Promise.all([
+    const [{ data: rfqData }, { data: projData }, { data: docData }, { data: attachData }, { data: repData }] = await Promise.all([
       supabase.from('lab_rfq').select('*, lab_companies(*), lab_rfq_items(*)').order('created_at', { ascending: false }).limit(20),
       supabase.from('lab_projects').select('*, lab_companies(*)').order('created_at', { ascending: false }).limit(20),
       supabase.from('lab_document_summary').select('*').order('created_at', { ascending: false }).limit(50),
       supabase.from('lab_rfq_attachments').select('rfq_id'),
+      supabase.from('lab_reports').select('id, report_number, report_title, issued_at, file_url, lab_projects!inner(project_name, project_number)').eq('status', 'issued').order('issued_at', { ascending: false }),
     ]);
     setRfqs(rfqData ?? []);
     setProjects(projData ?? []);
@@ -83,6 +85,7 @@ export default function LabDashboard() {
       counts[a.rfq_id] = (counts[a.rfq_id] ?? 0) + 1;
     });
     setAttachCounts(counts);
+    setIssuedReports((repData ?? []).map(r => ({ ...r, lab_projects: Array.isArray(r.lab_projects) ? r.lab_projects[0] : r.lab_projects })));
     setLoading(false);
   }, []);
 
@@ -284,6 +287,47 @@ export default function LabDashboard() {
                             {p.start_date && <span>▶ Start: {new Date(p.start_date).toLocaleDateString('en-MY')}</span>}
                             {p.target_completion && <span>🎯 Target: {new Date(p.target_completion).toLocaleDateString('en-MY')}</span>}
                             {p.lab_companies && <span>🏢 {p.lab_companies.company_name}</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reports */}
+              {activeTab === 'reports' && (
+                <div>
+                  <h1 className="text-xl font-bold text-slate-800 mb-4">My Issued Reports</h1>
+                  {issuedReports.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
+                      <p className="text-4xl mb-3">📑</p>
+                      <p className="text-slate-400 text-sm">No reports issued yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {issuedReports.map(r => (
+                        <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-5">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-mono font-bold text-purple-700 text-sm">{r.report_number}</span>
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">Issued</span>
+                              </div>
+                              <p className="font-semibold text-slate-800">{r.report_title}</p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {(r.lab_projects as {project_number?:string}|undefined)?.project_number ?? '—'} · {(r.lab_projects as {project_name?:string}|undefined)?.project_name ?? '—'}
+                              </p>
+                              {r.issued_at && <p className="text-xs text-slate-400 mt-0.5">Issued: {new Date(r.issued_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}
+                            </div>
+                            {r.file_url ? (
+                              <a href={r.file_url} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-4 py-2 bg-blue-950 hover:bg-blue-900 text-white rounded-xl text-xs font-bold shrink-0">
+                                ⬇️ Download PDF
+                              </a>
+                            ) : (
+                              <span className="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs">PDF not available</span>
+                            )}
                           </div>
                         </div>
                       ))}

@@ -23,7 +23,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   disposed:     { bg: '#f1f5f9', text: '#6b7280' },
 };
 
-type AdminTab = 'overview' | 'rfq' | 'quotations' | 'projects' | 'samples' | 'tests' | 'reports' | 'documents' | 'catalogue' | 'users';
+type AdminTab = 'overview' | 'rfq' | 'quotations' | 'projects' | 'samples' | 'tests' | 'reports' | 'documents' | 'catalogue' | 'users' | 'outsourced';
 
 function StatusBadge({ status }: { status: string }) {
   const style = STATUS_COLORS[status] ?? { bg: '#f1f5f9', text: '#64748b' };
@@ -547,6 +547,13 @@ export default function LabAdminPage() {
                       Open User Management →
                     </a>
                   </div>
+                </div>
+              )}
+              {/* OUTSOURCED LABS */}
+              {tab === 'outsourced' && (
+                <div>
+                  <h1 className="text-xl font-bold text-slate-800 mb-2">Outsourced Labs Registry</h1>
+                  <div className="mb-4"><a href="/lab/admin/outsourced" className="inline-block px-4 py-2 bg-blue-950 text-white rounded-xl text-xs font-bold hover:bg-blue-900">Open Outsourced Labs Registry →</a></div>
                 </div>
               )}
             </>
