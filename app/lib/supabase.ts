@@ -27,6 +27,7 @@ export interface Project {
   customer:       string | null;
   model:          string | null;
   start_date:    string | null;
+  auto_progress:  boolean;
   sop_date:       string | null;
   volume:         number | null;
   volume_unit:    string;
