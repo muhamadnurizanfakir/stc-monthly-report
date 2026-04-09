@@ -149,7 +149,7 @@ export default function LabAdminPage() {
 
   const TABS: { id: AdminTab; label: string; icon: string; count?: number }[] = [
     { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'rfq', label: 'RFQ', icon: '📋', count: rfqs.filter(r => r.status === 'submitted').length },
+    { id: 'rfq', label: 'LTR', icon: '📋', count: rfqs.filter(r => r.status === 'submitted').length },
     { id: 'quotations', label: 'Quotations', icon: '💰' },
     { id: 'projects', label: 'Projects', icon: '🗂️', count: projects.filter(p => p.status === 'active').length },
     { id: 'samples', label: 'Samples', icon: '📦' },
@@ -210,7 +210,7 @@ export default function LabAdminPage() {
                   <h1 className="text-xl font-bold text-slate-800 mb-6">Lab Overview</h1>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {[
-                      { label: 'Total RFQs', value: rfqs.length, icon: '📋', color: '#3b82f6' },
+                      { label: 'Total LTRs', value: rfqs.length, icon: '📋', color: '#3b82f6' },
                       { label: 'Active Projects', value: projects.filter(p => p.status === 'active').length, icon: '🗂️', color: '#16a34a' },
                       { label: 'Samples in Lab', value: samples.filter(s => s.status === 'in_test').length, icon: '📦', color: '#f97316' },
                       { label: 'Reports Issued', value: reports.filter(r => r.status === 'issued').length, icon: '📄', color: '#7c3aed' },
@@ -225,7 +225,7 @@ export default function LabAdminPage() {
                   {/* Pending actions */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-white rounded-xl border border-slate-200 p-4">
-                      <h3 className="font-bold text-slate-700 mb-3 text-sm">⏳ Pending RFQ Review</h3>
+                      <h3 className="font-bold text-slate-700 mb-3 text-sm">⏳ Pending LTR Review</h3>
                       {rfqs.filter(r => r.status === 'submitted').length === 0 ? (
                         <p className="text-slate-400 text-xs">No pending RFQs</p>
                       ) : rfqs.filter(r => r.status === 'submitted').slice(0, 5).map(r => (
@@ -259,11 +259,11 @@ export default function LabAdminPage() {
               {/* RFQ MANAGEMENT */}
               {tab === 'rfq' && (
                 <div>
-                  <h1 className="text-xl font-bold text-slate-800 mb-4">RFQ Management</h1>
+                  <h1 className="text-xl font-bold text-slate-800 mb-4">LTR Management</h1>
                   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <table className="w-full text-xs">
                       <thead><tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="text-left py-2 px-4 font-semibold text-slate-500">RFQ No.</th>
+                        <th className="text-left py-2 px-4 font-semibold text-slate-500">LTR No.</th>
                         <th className="text-left py-2 px-4 font-semibold text-slate-500">Project</th>
                         <th className="text-left py-2 px-4 font-semibold text-slate-500">Company</th>
                         <th className="text-left py-2 px-4 font-semibold text-slate-500">Contact</th>
@@ -298,7 +298,7 @@ export default function LabAdminPage() {
                         ))}
                       </tbody>
                     </table>
-                    {rfqs.length === 0 && <div className="py-8 text-center text-slate-400 text-sm">No RFQs yet.</div>}
+                    {rfqs.length === 0 && <div className="py-8 text-center text-slate-400 text-sm">No LTRs yet.</div>}
                   </div>
                 </div>
               )}
@@ -465,7 +465,7 @@ export default function LabAdminPage() {
                     <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                       <p className="text-xs text-slate-500 font-semibold">{documents.length} total documents</p>
                       <div className="flex gap-2">
-                        {['RFQ','QUO','PRJ','SAM','TST','RPT'].map(type => (
+                        {['LTR','QUO','PRJ','SAM','TST','RPT'].map(type => (
                           <span key={type} className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-xs font-mono">
                             {type}: {documents.filter(d => d.doc_type === type).length}
                           </span>

@@ -43,7 +43,7 @@ export default function LabPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/lab/rfq" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition-colors">📋 Submit RFQ</a>
+          <a href="/lab/rfq" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition-colors">📋 Submit LTR</a>
           <a href="/lab/dashboard" className="px-3 py-1.5 bg-blue-800 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors">📊 Dashboard</a>
           <a href="/lab/admin" className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-semibold transition-colors">⚙️ Admin</a>
         </div>
@@ -97,7 +97,7 @@ export default function LabPage() {
           <h2 className="text-lg font-bold text-slate-800 mb-4">How It Works</h2>
           <div className="flex items-start gap-2 overflow-x-auto pb-2">
             {[
-              { step: '01', label: 'Submit RFQ', icon: '📋' },
+              { step: '01', label: 'Submit LTR', icon: '📋' },
               { step: '02', label: 'Technical Review', icon: '🔍' },
               { step: '03', label: 'Quotation', icon: '💰' },
               { step: '04', label: 'Approval', icon: '✅' },
@@ -123,7 +123,7 @@ export default function LabPage() {
           <h2 className="text-white font-bold text-lg mb-2">Ready to Submit a Test Request?</h2>
           <p className="text-blue-300 text-sm mb-4">Fill in our RFQ form and our engineers will get back to you within 2 working days.</p>
           <a href="/lab/rfq" className="inline-block px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-colors">
-            📋 Submit RFQ Now
+            🧪 Submit LTR Now
           </a>
         </div>
       </div>

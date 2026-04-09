@@ -90,7 +90,7 @@ export default function LabDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/lab/rfq" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold">+ New RFQ</a>
+          <a href="/lab/rfq" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold">+ New LTR</a>
           <button onClick={logout} className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-semibold">Logout</button>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function LabDashboard() {
         <div className="w-48 bg-blue-950 border-r border-blue-900 shrink-0 py-4">
           {([
             { id: 'overview', label: 'Overview', icon: '📊' },
-            { id: 'rfq', label: 'My RFQs', icon: '📋' },
+            { id: 'rfq', label: 'My LTRs', icon: '📋' },
             { id: 'projects', label: 'Projects', icon: '🗂️' },
             { id: 'documents', label: 'Documents', icon: '📄' },
           ] as { id: typeof activeTab; label: string; icon: string }[]).map(item => (
@@ -126,7 +126,7 @@ export default function LabDashboard() {
                   <h1 className="text-xl font-bold text-slate-800 mb-6">Welcome, {user.name}!</h1>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {[
-                      { label: 'Total RFQs', value: rfqs.length, icon: '📋', color: '#3b82f6' },
+                      { label: 'Total LTRs', value: rfqs.length, icon: '📋', color: '#3b82f6' },
                       { label: 'Active Projects', value: projects.filter(p => p.status === 'active').length, icon: '🗂️', color: '#16a34a' },
                       { label: 'Pending Review', value: rfqs.filter(r => r.status === 'under_review').length, icon: '🔍', color: '#f97316' },
                       { label: 'Completed', value: projects.filter(p => p.status === 'completed').length, icon: '✅', color: '#7c3aed' },
@@ -147,12 +147,12 @@ export default function LabDashboard() {
                     </div>
                     {rfqs.slice(0,5).length === 0 ? (
                       <div className="py-6 text-center text-slate-400 text-sm">
-                        No RFQs yet. <a href="/lab/rfq" className="text-blue-600 hover:underline">Submit your first RFQ →</a>
+                        No LTRs yet. <a href="/lab/rfq" className="text-blue-600 hover:underline">Submit your first RFQ →</a>
                       </div>
                     ) : (
                       <table className="w-full text-xs">
                         <thead><tr className="bg-slate-50 border-b border-slate-200">
-                          <th className="text-left py-2 px-4 font-semibold text-slate-500">RFQ No.</th>
+                          <th className="text-left py-2 px-4 font-semibold text-slate-500">LTR No.</th>
                           <th className="text-left py-2 px-4 font-semibold text-slate-500">Project</th>
                           <th className="text-left py-2 px-4 font-semibold text-slate-500">Status</th>
                           <th className="text-left py-2 px-4 font-semibold text-slate-500">Date</th>
@@ -177,12 +177,12 @@ export default function LabDashboard() {
               {activeTab === 'rfq' && (
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-xl font-bold text-slate-800">My RFQs</h1>
-                    <a href="/lab/rfq" className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600">+ New RFQ</a>
+                    <h1 className="text-xl font-bold text-slate-800">My LTRs</h1>
+                    <a href="/lab/rfq" className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600">+ New LTR</a>
                   </div>
                   {rfqs.length === 0 ? (
                     <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
-                      <p className="text-slate-400 text-sm mb-2">No RFQs submitted yet</p>
+                      <p className="text-slate-400 text-sm mb-2">No LTRs submitted yet</p>
                       <a href="/lab/rfq" className="text-blue-600 text-sm hover:underline">Submit your first RFQ →</a>
                     </div>
                   ) : (
