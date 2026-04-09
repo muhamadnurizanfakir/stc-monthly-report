@@ -525,14 +525,17 @@ export default function LabAdminPage() {
                 </div>
               )}
 
-              {/* USERS placeholder */}
+              {/* USERS */}
               {tab === 'users' && (
                 <div>
                   <h1 className="text-xl font-bold text-slate-800 mb-4">User Management</h1>
-                  <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
+                  <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
                     <p className="text-4xl mb-3">👥</p>
-                    <p className="text-slate-600 font-semibold mb-1">Lab User Management</p>
-                    <p className="text-slate-400 text-sm">Coming next — manage internal and external users</p>
+                    <p className="text-slate-600 font-semibold mb-2">Manage Lab Users</p>
+                    <p className="text-slate-400 text-sm mb-4">Add engineers, reviewers, approvers and customer accounts</p>
+                    <a href="/lab/admin/users" className="inline-block px-6 py-2.5 bg-blue-950 text-white rounded-xl text-sm font-bold hover:bg-blue-900">
+                      Open User Management →
+                    </a>
                   </div>
                 </div>
               )}
