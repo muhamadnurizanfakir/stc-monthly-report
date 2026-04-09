@@ -513,14 +513,17 @@ export default function LabAdminPage() {
                 </div>
               )}
 
-              {/* CATALOGUE placeholder */}
+              {/* CATALOGUE */}
               {tab === 'catalogue' && (
                 <div>
                   <h1 className="text-xl font-bold text-slate-800 mb-4">Test Catalogue</h1>
-                  <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
+                  <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
                     <p className="text-4xl mb-3">📚</p>
-                    <p className="text-slate-600 font-semibold mb-1">Test Catalogue Management</p>
-                    <p className="text-slate-400 text-sm">Coming next — manage available tests and pricing</p>
+                    <p className="text-slate-600 font-semibold mb-2">Manage Test Catalogue</p>
+                    <p className="text-slate-400 text-sm mb-4">Add tests, set pricing, standards and duration</p>
+                    <a href="/lab/admin/catalogue" className="inline-block px-6 py-2.5 bg-blue-950 text-white rounded-xl text-sm font-bold hover:bg-blue-900">
+                      Open Test Catalogue →
+                    </a>
                   </div>
                 </div>
               )}
