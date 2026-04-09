@@ -33,17 +33,56 @@ export default function LabDashboard() {
   const [documents, setDocuments] = useState<LabDocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'rfq' | 'projects' | 'documents'>('overview');
+  const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+  const [attachCounts, setAttachCounts] = useState<Record<string, number>>({});
+
+  async function handleAddAttachment(ltrId: string) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.pdf,.dwg,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
+    input.onchange = async (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files ?? []);
+      if (files.length === 0) return;
+      setUploadingFor(ltrId);
+      for (const file of files) {
+        const path = `${ltrId}/${Date.now()}_${file.name}`;
+        const { data: uploaded } = await supabase.storage.from('lab-rfq-attachments').upload(path, file);
+        if (uploaded) {
+          const { data: { publicUrl } } = supabase.storage.from('lab-rfq-attachments').getPublicUrl(path);
+          await supabase.from('lab_rfq_attachments').insert([{
+            rfq_id: ltrId, file_name: file.name,
+            file_url: publicUrl, file_size: file.size, file_type: file.type,
+          }]);
+        }
+      }
+      // Refresh attachment counts
+      const { data: counts } = await supabase.from('lab_rfq_attachments')
+        .select('rfq_id').eq('rfq_id', ltrId);
+      setAttachCounts(prev => ({ ...prev, [ltrId]: (counts ?? []).length }));
+      setUploadingFor(null);
+      alert(`${files.length} file(s) uploaded successfully!`);
+    };
+    input.click();
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [{ data: rfqData }, { data: projData }, { data: docData }] = await Promise.all([
+    const [{ data: rfqData }, { data: projData }, { data: docData }, { data: attachData }] = await Promise.all([
       supabase.from('lab_rfq').select('*, lab_companies(*), lab_rfq_items(*)').order('created_at', { ascending: false }).limit(20),
       supabase.from('lab_projects').select('*, lab_companies(*)').order('created_at', { ascending: false }).limit(20),
       supabase.from('lab_document_summary').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('lab_rfq_attachments').select('rfq_id'),
     ]);
     setRfqs(rfqData ?? []);
     setProjects(projData ?? []);
     setDocuments(docData ?? []);
+    // Count attachments per LTR
+    const counts: Record<string, number> = {};
+    (attachData ?? []).forEach((a: {rfq_id: string}) => {
+      counts[a.rfq_id] = (counts[a.rfq_id] ?? 0) + 1;
+    });
+    setAttachCounts(counts);
     setLoading(false);
   }, []);
 
@@ -205,6 +244,14 @@ export default function LabDashboard() {
                             <span>📦 {r.lab_rfq_items?.length ?? 0} test item(s)</span>
                             {r.required_date && <span>📅 Required by: {new Date(r.required_date).toLocaleDateString('en-MY')}</span>}
                             {r.lab_companies && <span>🏢 {r.lab_companies.company_name}</span>}
+                            <span>📎 {attachCounts[r.id] ?? 0} attachment(s)</span>
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            <button onClick={() => handleAddAttachment(r.id)}
+                              disabled={uploadingFor === r.id}
+                              className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100 disabled:opacity-50 border border-blue-200">
+                              {uploadingFor === r.id ? '⏳ Uploading...' : '📎 Add Attachment'}
+                            </button>
                           </div>
                         </div>
                       ))}

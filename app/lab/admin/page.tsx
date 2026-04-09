@@ -501,14 +501,17 @@ export default function LabAdminPage() {
                 </div>
               )}
 
-              {/* QUOTATIONS placeholder */}
+              {/* QUOTATIONS */}
               {tab === 'quotations' && (
                 <div>
                   <h1 className="text-xl font-bold text-slate-800 mb-4">Quotation Management</h1>
-                  <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
+                  <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
                     <p className="text-4xl mb-3">💰</p>
-                    <p className="text-slate-600 font-semibold mb-1">Quotation Builder</p>
-                    <p className="text-slate-400 text-sm">Coming next — generate quotations from approved RFQs</p>
+                    <p className="text-slate-600 font-semibold mb-2">Create & Manage Quotations</p>
+                    <p className="text-slate-400 text-sm mb-4">Generate quotations from LTRs under review, set pricing and send to customers</p>
+                    <a href="/lab/admin/quotations" className="inline-block px-6 py-2.5 bg-blue-950 text-white rounded-xl text-sm font-bold hover:bg-blue-900">
+                      Open Quotation Manager →
+                    </a>
                   </div>
                 </div>
               )}
