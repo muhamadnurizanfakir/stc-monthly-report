@@ -23,7 +23,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   disposed:     { bg: '#f1f5f9', text: '#6b7280' },
 };
 
-type AdminTab = 'overview' | 'rfq' | 'quotations' | 'projects' | 'samples' | 'tests' | 'reports' | 'documents' | 'catalogue' | 'users' | 'outsourced';
+type AdminTab = 'overview' | 'rfq' | 'quotations' | 'projects' | 'samples' | 'tests' | 'reports' | 'documents' | 'catalogue' | 'users' | 'outsourced' | 'companies' | 'audit';
 
 function StatusBadge({ status }: { status: string }) {
   const style = STATUS_COLORS[status] ?? { bg: '#f1f5f9', text: '#64748b' };
@@ -549,6 +549,23 @@ export default function LabAdminPage() {
                   </div>
                 </div>
               )}
+              {/* COMPANIES */}
+              {tab === 'companies' && (
+                <div>
+                  <h1 className="text-xl font-bold text-slate-800 mb-2">Company Management</h1>
+                  <div className="mb-4"><a href="/lab/admin/companies" className="inline-block px-4 py-2 bg-blue-950 text-white rounded-xl text-xs font-bold hover:bg-blue-900">Open Company Manager →</a></div>
+                </div>
+              )}
+
+              {/* AUDIT LOG */}
+              {tab === 'audit' && (
+                <div>
+                  <h1 className="text-xl font-bold text-slate-800 mb-2">Audit Log</h1>
+                  <p className="text-xs text-slate-500 mb-4">ISO 17025 compliant append-only audit trail of all system actions</p>
+                  <div className="mb-4"><a href="/lab/admin/audit" className="inline-block px-4 py-2 bg-blue-950 text-white rounded-xl text-xs font-bold hover:bg-blue-900">Open Audit Log Viewer →</a></div>
+                </div>
+              )}
+
               {/* OUTSOURCED LABS */}
               {tab === 'outsourced' && (
                 <div>
