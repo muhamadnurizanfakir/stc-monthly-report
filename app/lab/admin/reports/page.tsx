@@ -10,7 +10,7 @@ interface TestExecution {
 }
 interface Report {
   id: string; report_number: string; report_title: string; report_type: string;
-  status: string; revision: string; file_url: string | null;
+  project_id: string; status: string; revision: string; file_url: string | null;
   summary: string | null; conclusion: string | null; issued_at: string | null;
   created_at: string; reviewer_notes: string | null; approver_notes: string | null;
   lab_projects?: { project_name: string; project_number: string };
@@ -44,6 +44,7 @@ export default function ReportsPage() {
   const [viewReport, setViewReport] = useState<Report | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
   const [approveNote, setApproveNote] = useState('');
@@ -65,6 +66,35 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  async function generatePDF(report: Report) {
+    setGeneratingPDF(report.id);
+    try {
+      // Fetch full report data with all relations
+      const { data: fullReport } = await supabase
+        .from('lab_reports')
+        .select('*, lab_projects(project_number, project_name, lab_companies(company_name)), prepared_by_user:lab_users!lab_reports_prepared_by_fkey(name, designation), reviewed_by_user:lab_users!lab_reports_reviewed_by_fkey(name, designation), approved_by_user:lab_users!lab_reports_approved_by_fkey(name, designation)')
+        .eq('id', report.id)
+        .single();
+
+      // Fetch tests + results for this project
+      const { data: testData } = await supabase
+        .from('lab_test_executions')
+        .select('*, lab_test_results(*), lab_outsourced_labs(lab_name), lab_samples(sample_number, sample_description)')
+        .eq('project_id', report.project_id)
+        .in('status', ['completed', 'in_progress'])
+        .order('test_number');
+
+      if (fullReport) {
+        const { generateLabReportPDF } = await import('./reportGenerator');
+        await generateLabReportPDF(fullReport, testData ?? []);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error generating PDF');
+    }
+    setGeneratingPDF(null);
+  }
 
   async function loadProjectTests(projectId: string) {
     const { data } = await supabase.from('lab_test_executions')
@@ -235,9 +265,13 @@ export default function ReportsPage() {
                     <td className="py-2.5 px-4 flex gap-1">
                       <button onClick={() => setViewReport(r)}
                         className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">👁️ View</button>
+                      <button onClick={() => generatePDF(r)} disabled={generatingPDF === r.id}
+                        className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs hover:bg-purple-100 disabled:opacity-50">
+                        {generatingPDF === r.id ? '⏳' : '📄'} PDF
+                      </button>
                       {r.file_url && (
                         <a href={r.file_url} target="_blank" rel="noopener noreferrer"
-                          className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs hover:bg-green-100">⬇️ PDF</a>
+                          className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs hover:bg-green-100">⬇️ Saved</a>
                       )}
                     </td>
                   </tr>
@@ -419,9 +453,13 @@ export default function ReportsPage() {
                 </div>
               )}
 
-              {/* PDF Upload */}
+              {/* PDF Generate + Upload */}
               <div className="border border-slate-200 rounded-xl p-4">
                 <p className="text-xs font-bold text-slate-600 mb-2">📄 Report PDF</p>
+                <button onClick={() => generatePDF(viewReport)} disabled={generatingPDF === viewReport.id}
+                  className="w-full py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold mb-3 disabled:opacity-50">
+                  {generatingPDF === viewReport.id ? '⏳ Generating...' : '📄 Generate PDF Report'}
+                </button>
                 {viewReport.file_url ? (
                   <div className="flex items-center justify-between">
                     <a href={viewReport.file_url} target="_blank" rel="noopener noreferrer"
