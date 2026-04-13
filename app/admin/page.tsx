@@ -68,7 +68,7 @@ export default function AdminPage() {
     // Copy main projects
     const { data: projects } = await supabase
       .from("projects")
-      .select("*, action_items(*), gantt_activities(*, gantt_bars(*), gantt_milestones(*))")
+      .select("*, action_items(*), gantt_activities!project_id(*, gantt_bars(*), gantt_milestones(*))")
       .eq("report_id", sourceId);
 
     for (const p of projects ?? []) {
@@ -115,18 +115,19 @@ export default function AdminPage() {
     // Copy shohin projects
     const { data: shohinProjects } = await supabase
       .from("shohin_projects")
-      .select("*, shohin_action_items(*), gantt_activities(*, gantt_bars(*), gantt_milestones(*))")
+      .select("*, shohin_action_items(*), gantt_activities!shohin_project_id(*, gantt_bars(*), gantt_milestones(*))")
       .eq("report_id", sourceId);
 
+    console.log('Copying shohin:', shohinProjects?.length, 'projects');
     for (const s of shohinProjects ?? []) {
-      const { data: newShohin } = await supabase.from("shohin_projects").insert([{
+      const { data: newShohin, error: shohinErr } = await supabase.from("shohin_projects").insert([{
         report_id: destId, project_name: s.project_name, customer: s.customer,
         category: s.category, sop_date: s.sop_date,
         completion_pct: s.completion_pct, auto_progress: s.auto_progress, status: s.status,
         summary_text: s.summary_text, is_visible: s.is_visible,
       }]).select().single();
 
-      if (!newShohin) continue;
+      if (!newShohin) { console.error('Shohin insert failed:', shohinErr); continue; }
 
       for (const item of s.shohin_action_items ?? []) {
         await supabase.from("shohin_action_items").insert([{
@@ -161,18 +162,19 @@ export default function AdminPage() {
     // Copy engineering projects
     const { data: engProjects } = await supabase
       .from("engineering_projects")
-      .select("*, engineering_action_items(*), gantt_activities(*, gantt_bars(*), gantt_milestones(*))")
+      .select("*, engineering_action_items(*), gantt_activities!engineering_project_id(*, gantt_bars(*), gantt_milestones(*))")
       .eq("report_id", sourceId);
 
+    console.log('Copying eng:', engProjects?.length, 'projects');
     for (const e of engProjects ?? []) {
-      const { data: newEng } = await supabase.from("engineering_projects").insert([{
+      const { data: newEng, error: engErr } = await supabase.from("engineering_projects").insert([{
         report_id: destId, project_name: e.project_name,
         customer: e.customer, model: e.model, sop_date: e.sop_date, volume: e.volume,
         summary_text: e.summary_text, completion_pct: e.completion_pct,
         auto_progress: e.auto_progress, status: e.status, is_visible: e.is_visible,
       }]).select().single();
 
-      if (!newEng) continue;
+      if (!newEng) { console.error('Eng insert failed:', engErr); continue; }
 
       for (const item of e.engineering_action_items ?? []) {
         await supabase.from("engineering_action_items").insert([{
