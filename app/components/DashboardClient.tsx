@@ -12,37 +12,45 @@ import StabilizerSection from "./StabilizerSection";
 import ShohinSection from "./ShohinSection";
 import EngineeringSection from "./EngineeringSection";
 
-interface Props {
-  initialReport: Report;
-  allReports: Report[];
-  initialProjects: Project[];
-  initialShohin: ShohinProject[];
-  initialSections: Section[];
-  initialCustomProjects: CustomProject[];
-  initialEngineering: EngineeringProject[];
-}
 
-export default function DashboardClient({ initialReport, allReports, initialProjects, initialShohin, initialEngineering, initialSections, initialCustomProjects }: Props) {
+export default function DashboardClient() {
   const [activeSection, setActiveSection] = useState("overview");
-  const [selectedReport, setSelectedReport] = useState<Report>(initialReport);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [shohinProjects, setShohinProjects] = useState<ShohinProject[]>(initialShohin);
-  const [engineeringProjects, setEngineeringProjects] = useState<EngineeringProject[]>(initialEngineering);
-  const [loadingReport, setLoadingReport] = useState(false);
-  const [sections, setSections] = useState<Section[]>(initialSections);
-  const [customProjects, setCustomProjects] = useState<CustomProject[]>(initialCustomProjects);
-  const [reportList, setReportList] = useState<Report[]>(allReports);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [shohinProjects, setShohinProjects] = useState<ShohinProject[]>([]);
+  const [engineeringProjects, setEngineeringProjects] = useState<EngineeringProject[]>([]);
+  const [loadingReport, setLoadingReport] = useState(true);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [customProjects, setCustomProjects] = useState<CustomProject[]>([]);
+  const [reportList, setReportList] = useState<Report[]>([]);
 
   useEffect(() => {
-    async function refreshReports() {
-      const { data } = await supabase.from("reports").select("*").order("report_date", { ascending: false });
-      if (data && data.length > 0) setReportList(data);
+    async function initialLoad() {
+      const { data: reports } = await supabase.from("reports").select("*").order("report_date", { ascending: false });
+      if (!reports || reports.length === 0) { setLoadingReport(false); return; }
+      setReportList(reports);
+      const latest = reports[0];
+      setSelectedReport(latest);
+      const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
+        supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", latest.id).order("project_code"),
+        supabase.from("shohin_projects").select("*, shohin_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", latest.id),
+        supabase.from("engineering_projects").select("*, engineering_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", latest.id),
+        supabase.from("sections").select("*").eq("report_id", latest.id).order("sort_order"),
+        supabase.from("custom_projects").select("*, custom_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", latest.id),
+      ]);
+      setProjects(proj ?? []);
+      setShohinProjects(shohin ?? []);
+      setEngineeringProjects(eng ?? []);
+      setSections(sec ?? []);
+      setCustomProjects(cust ?? []);
+      setLoadingReport(false);
     }
-    refreshReports();
+    initialLoad();
   }, []);
 
   async function refreshCurrentReport() {
-    const reportId = selectedReport.id;
+    if (!selectedReport) return;
+    const reportId = selectedReport?.id ?? '';
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId),
@@ -59,7 +67,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
 
   async function handleReportChange(reportId: string) {
     const report = reportList.find(r => r.id === reportId);
-    if (!report) return;
+    if (!report || !selectedReport) return;
     setLoadingReport(true);
     setSelectedReport(report);
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
@@ -86,14 +94,14 @@ export default function DashboardClient({ initialReport, allReports, initialProj
           </div>
           <div>
             <h1 className="font-black text-lg tracking-tight">Sapura Technical Centre</h1>
-            <p className="text-blue-200 text-xs">{selectedReport.title}</p>
+            <p className="text-blue-200 text-xs">{selectedReport?.title}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-blue-200 text-xs font-medium whitespace-nowrap">Report Period:</label>
             <select
-              value={selectedReport.id}
+              value={selectedReport?.id ?? ""}
               onChange={e => handleReportChange(e.target.value)}
               className="bg-blue-900 text-white text-sm rounded-lg px-3 py-1.5 border border-blue-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
@@ -110,19 +118,19 @@ export default function DashboardClient({ initialReport, allReports, initialProj
       </header>
 
       <div className="flex flex-1">
-        <Sidebar activeSection={activeSection} onNavigate={setActiveSection} reportLabel={selectedReport.period_label} reportDate={selectedReport.report_date} sections={sections} />
+        <Sidebar activeSection={activeSection} onNavigate={setActiveSection} reportLabel={selectedReport?.period_label ?? ""} reportDate={selectedReport?.report_date ?? ""} sections={sections} />
         <main className="flex-1 p-6 overflow-auto">
           {loadingReport ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="w-8 h-8 border-4 border-blue-950 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-slate-500 text-sm">Loading {selectedReport.period_label}...</p>
+                <p className="text-slate-500 text-sm">Loading {selectedReport?.period_label}...</p>
               </div>
             </div>
           ) : (
             <>
               {activeSection === "overview" && (
-                <OverviewSection reportLabel={selectedReport.period_label} projects={projects} shohinProjects={shohinProjects} engineeringProjects={engineeringProjects} customProjects={customProjects} sections={sections} />
+                <OverviewSection reportLabel={selectedReport?.period_label ?? ""} projects={projects} shohinProjects={shohinProjects} engineeringProjects={engineeringProjects} customProjects={customProjects} sections={sections} />
               )}
               {activeSection === "coil_spring" && (
                 <CoilSpringSection projects={projects} onRefresh={refreshCurrentReport} />
@@ -131,7 +139,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
                 <StabilizerSection projects={projects} onRefresh={refreshCurrentReport} />
               )}
               {activeSection === "shohin" && (
-                <ShohinSection shohinProjects={shohinProjects} reportId={selectedReport.id} onRefresh={refreshCurrentReport} />
+                <ShohinSection shohinProjects={shohinProjects} reportId={selectedReport?.id ?? ''} onRefresh={refreshCurrentReport} />
               )}
               {sections.map(sec => (
                 activeSection === "section_" + sec.id && (
@@ -152,7 +160,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
       </div>
 
       <footer className="bg-blue-950 text-blue-300 text-xs text-center py-3">
-        Together We Grow · Sapura Technical Centre Sdn Bhd · {selectedReport.period_label}
+        Together We Grow · Sapura Technical Centre Sdn Bhd · {selectedReport?.period_label}
       </footer>
     </div>
   );
