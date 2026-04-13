@@ -91,6 +91,8 @@ export interface ShohinActionItem {
 }
 
 export interface EngineeringProject {
+  auto_progress?: boolean;
+  milestone_progress?: number | null;
   id:             string;
   report_id:      string;
   project_name:   string;
@@ -142,7 +144,7 @@ export async function getProjectsByReport(reportId: string): Promise<Project[]> 
 export async function getShohinByReport(reportId: string): Promise<ShohinProject[]> {
   const { data, error } = await supabase
     .from('shohin_projects')
-    .select('*, shohin_action_items(*)')
+    .select('*, shohin_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)')
     .eq('report_id', reportId);
   if (error) { console.error(error); return []; }
   return data ?? [];
@@ -151,7 +153,7 @@ export async function getShohinByReport(reportId: string): Promise<ShohinProject
 export async function getEngineeringByReport(reportId: string): Promise<EngineeringProject[]> {
   const { data, error } = await supabase
     .from('engineering_projects')
-    .select('*, engineering_action_items(*)')
+    .select('*, engineering_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)')
     .eq('report_id', reportId);
   if (error) { console.error(error); return []; }
   return data ?? [];

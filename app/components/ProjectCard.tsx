@@ -16,7 +16,8 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const items = [...(project.action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
 
   // Get milestone-based progress
-  const milestoneData = (project as {project_milestone_progress?: {milestone_progress: number|null; total_milestones: number; achieved_milestones: number}[]}).project_milestone_progress;
+  const rawMilestoneData = (project as {project_milestone_progress?: {milestone_progress: number|null; total_milestones: number; achieved_milestones: number}[] | {milestone_progress: number|null; total_milestones: number; achieved_milestones: number} | null}).project_milestone_progress;
+  const milestoneData = Array.isArray(rawMilestoneData) ? rawMilestoneData : rawMilestoneData ? [rawMilestoneData] : null;
   const milestonePct = milestoneData && milestoneData.length > 0 ? milestoneData[0].milestone_progress : null;
   const totalMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].total_milestones : 0;
   const achievedMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].achieved_milestones : 0;

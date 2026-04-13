@@ -46,9 +46,9 @@ export default function DashboardClient({ initialReport, allReports, initialProj
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
-      supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
+      supabase.from("engineering_projects").select("*, engineering_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
-      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
+      supabase.from("custom_projects").select("*, custom_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId),
     ]);
     if (proj)  setProjects(proj);
     if (shohin) setShohinProjects(shohin);
@@ -65,9 +65,9 @@ export default function DashboardClient({ initialReport, allReports, initialProj
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
-      supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
+      supabase.from("engineering_projects").select("*, engineering_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
-      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
+      supabase.from("custom_projects").select("*, custom_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId),
     ]);
     setProjects(proj ?? []);
     setShohinProjects(shohin ?? []);
