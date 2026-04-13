@@ -23,8 +23,11 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const achievedMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].achieved_milestones : 0;
   // auto_progress=true → use milestone %, auto_progress=false → use manual completion_pct
   const autoProgress = (project as {auto_progress?: boolean}).auto_progress !== false;
-  const displayPct = autoProgress ? (milestonePct ?? (project.completion_pct ?? 0)) : (project.completion_pct ?? 0);
-  const isAutoCalc = autoProgress && milestonePct !== null;
+  // Only use auto if milestones exist AND at least some are achieved (avoid showing 0% auto)
+  const hasAchievedMilestones = achievedMs > 0;
+  const useAutoCalc = autoProgress && milestonePct !== null && (hasAchievedMilestones || totalMs === 0);
+  const displayPct = useAutoCalc ? (milestonePct ?? (project.completion_pct ?? 0)) : (project.completion_pct ?? 0);
+  const isAutoCalc = useAutoCalc && milestonePct !== null;
 
   // Calculate scheduled progress from start_date to sop_date
   const scheduledPct = (() => {

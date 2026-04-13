@@ -222,7 +222,7 @@ export async function getCustomProjectsBySection(sectionId: string): Promise<Cus
 export async function getCustomProjectsByReport(reportId: string): Promise<CustomProject[]> {
   const { data, error } = await supabase
     .from('custom_projects')
-    .select('*, custom_action_items(*)')
+    .select('*, custom_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)')
     .eq('report_id', reportId)
     .order('sort_order');
   if (error) { console.error(error); return []; }
