@@ -75,7 +75,8 @@ export default function AdminPage() {
       const { data: newProject } = await supabase.from("projects").insert([{
         report_id: destId, project_code: p.project_code, project_name: p.project_name,
         category: p.category, customer: p.customer, model: p.model, sop_date: p.sop_date,
-        volume: p.volume, completion_pct: p.completion_pct, status: p.status,
+        start_date: p.start_date, volume: p.volume, completion_pct: p.completion_pct,
+        auto_progress: p.auto_progress, status: p.status,
         summary_text: p.summary_text, is_visible: p.is_visible,
       }]).select().single();
 
@@ -99,13 +100,13 @@ export default function AdminPage() {
         for (const bar of act.gantt_bars ?? []) {
           await supabase.from("gantt_bars").insert([{
             activity_id: newAct.id, bar_type: bar.bar_type,
-            start_date: bar.start_date, end_date: bar.end_date, label: bar.label,
+            start_date: bar.start_date, end_date: bar.end_date, label: bar.label, is_done: bar.is_done,
           }]);
         }
         for (const ms of act.gantt_milestones ?? []) {
           await supabase.from("gantt_milestones").insert([{
             activity_id: newAct.id, milestone_date: ms.milestone_date,
-            shape: ms.shape, label: ms.label,
+            shape: ms.shape, label: ms.label, is_achieved: ms.is_achieved,
           }]);
         }
       }
@@ -120,7 +121,8 @@ export default function AdminPage() {
     for (const s of shohinProjects ?? []) {
       const { data: newShohin } = await supabase.from("shohin_projects").insert([{
         report_id: destId, project_name: s.project_name, customer: s.customer,
-        completion_pct: s.completion_pct, status: s.status,
+        category: s.category, sop_date: s.sop_date,
+        completion_pct: s.completion_pct, auto_progress: s.auto_progress, status: s.status,
         summary_text: s.summary_text, is_visible: s.is_visible,
       }]).select().single();
 
@@ -144,13 +146,13 @@ export default function AdminPage() {
         for (const bar of act.gantt_bars ?? []) {
           await supabase.from("gantt_bars").insert([{
             activity_id: newAct.id, bar_type: bar.bar_type,
-            start_date: bar.start_date, end_date: bar.end_date, label: bar.label,
+            start_date: bar.start_date, end_date: bar.end_date, label: bar.label, is_done: bar.is_done,
           }]);
         }
         for (const ms of act.gantt_milestones ?? []) {
           await supabase.from("gantt_milestones").insert([{
             activity_id: newAct.id, milestone_date: ms.milestone_date,
-            shape: ms.shape, label: ms.label,
+            shape: ms.shape, label: ms.label, is_achieved: ms.is_achieved,
           }]);
         }
       }
@@ -167,7 +169,7 @@ export default function AdminPage() {
         report_id: destId, project_name: e.project_name,
         customer: e.customer, model: e.model, sop_date: e.sop_date, volume: e.volume,
         summary_text: e.summary_text, completion_pct: e.completion_pct,
-        status: e.status, is_visible: e.is_visible,
+        auto_progress: e.auto_progress, status: e.status, is_visible: e.is_visible,
       }]).select().single();
 
       if (!newEng) continue;
@@ -190,20 +192,21 @@ export default function AdminPage() {
         for (const bar of act.gantt_bars ?? []) {
           await supabase.from("gantt_bars").insert([{
             activity_id: newAct.id, bar_type: bar.bar_type,
-            start_date: bar.start_date, end_date: bar.end_date, label: bar.label,
+            start_date: bar.start_date, end_date: bar.end_date, label: bar.label, is_done: bar.is_done,
           }]);
         }
         for (const ms of act.gantt_milestones ?? []) {
           await supabase.from("gantt_milestones").insert([{
             activity_id: newAct.id, milestone_date: ms.milestone_date,
-            shape: ms.shape, label: ms.label,
+            shape: ms.shape, label: ms.label, is_achieved: ms.is_achieved,
           }]);
         }
       }
     }
   }
 
-  function startEditReport(report: Report) {
+
+    function startEditReport(report: Report) {
     setEditingReportId(report.id);
     setForm({ title: report.title ?? "Functions Reporting & Presentation", report_date: report.report_date, period_label: report.period_label, created_by: report.created_by ?? "STC Engineering", notes: report.notes ?? "" });
     setShowForm(true);
