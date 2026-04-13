@@ -58,7 +58,7 @@ export default function DashboardClient({ initialReport, allReports, initialProj
   }
 
   async function handleReportChange(reportId: string) {
-    const report = allReports.find(r => r.id === reportId);
+    const report = reportList.find(r => r.id === reportId);
     if (!report) return;
     setLoadingReport(true);
     setSelectedReport(report);
