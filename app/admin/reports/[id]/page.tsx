@@ -25,7 +25,7 @@ interface ShohinRow { id: string; project_code: string | null; project_name: str
 interface EngRow { id: string; project_name: string; customer: string | null; model: string | null; sop_date: string | null; volume: number | null; category: string | null; summary_text: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
 interface ActionItemRow { id: string; item_no: number | null; item_category?: string | null; issue_desc: string; action_plan: string | null; completion_pct: number; due_date: string | null; is_info_only: boolean; }
 
-type ActiveTab = "coil_spring" | "shohin" | "engineering" | "sections";
+type ActiveTab = "coil_spring" | "shohin" | "engineering" | "assembly" | "machining" | "others" | "sections";
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -160,6 +160,10 @@ export default function ReportDetailPage() {
         </div>
         <button onClick={() => {
           if (activeTab === "sections") { setShowSectionForm(true); setEditingSectionId(null); setSectionForm({ name: "", icon: "📁", color: "#0f172a", display_mode: "individual", sort_order: sections.length.toString() }); }
+          else if (activeTab === "assembly" || activeTab === "machining" || activeTab === "others") {
+            const sec = sections.find(s => (s as {section_type?:string}).section_type === activeTab);
+            if (sec) { setActiveSectionTab(sec.id); setCustomForm({ project_code: '', project_name: '', customer: '', category: activeTab, sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '' }); setEditingCustomId(null); setShowForm(true); }
+          }
           else { setShowForm(true); setEditingId(null); setEditingShohinId(null); setEditingEngId(null); setForm(emptyProject); setShohinForm(emptyShohin); setEngForm(emptyEng); }
         }}
           className="px-4 py-2 bg-blue-950 text-white rounded-lg text-sm font-semibold hover:bg-blue-900">
@@ -173,7 +177,7 @@ export default function ReportDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200">
-        {([["coil_spring", "Coil Spring & Stabilizer", tabCounts.coil_spring], ["shohin", "Material Change", tabCounts.shohin], ["engineering", "Engineering", tabCounts.engineering], ["sections", "Custom Sections", sections.length]] as [ActiveTab, string, number][]).map(([id, label, count]) => (
+        {([["coil_spring", "Coil Spring & Stabilizer", tabCounts.coil_spring], ["shohin", "Process Improvement", tabCounts.shohin], ["engineering", "Engineering", tabCounts.engineering], ["assembly", "Assembly", 0], ["machining", "Machining", 0], ["others", "Others", 0], ["sections", "Custom Sections", sections.length]] as [ActiveTab, string, number][]).map(([id, label, count]) => (
           <button key={id} onClick={() => { setActiveTab(id); setShowForm(false); }}
             className={"px-4 py-2 text-sm font-semibold border-b-2 transition-colors " + (activeTab === id ? "border-blue-950 text-blue-950" : "border-transparent text-slate-500 hover:text-slate-700")}>
             {label} <span className="ml-1 px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">{count}</span>
@@ -428,6 +432,67 @@ export default function ReportDetailPage() {
             </div>
           ))}
 
+
+          {/* Assembly Tab */}
+          {(activeTab === "assembly" || activeTab === "machining" || activeTab === "others") && (() => {
+            const typeMap: Record<string, string> = { assembly: 'Assembly', machining: 'Machining Parts', others: 'Others' };
+            const iconMap: Record<string, string> = { assembly: '🔧', machining: '⚙️', others: '◆' };
+            const sec = sections.find(s => (s as {section_type?:string}).section_type === activeTab);
+            const secProjects = sec ? customProjects.filter(p => p.section_id === sec.id) : [];
+            return (
+              <div>
+                <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <span>{iconMap[activeTab]}</span>{typeMap[activeTab]}
+                  <span className="text-xs text-slate-400 font-normal">({secProjects.length} projects)</span>
+                </h2>
+                {!sec ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
+                    Section not found. Please re-create this report or contact admin.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {secProjects.length === 0 && (
+                      <div className="bg-slate-50 rounded-xl border border-slate-200 py-8 text-center text-slate-400 text-sm">
+                        No projects yet. Click &quot;+ Add Project&quot; to add one.
+                      </div>
+                    )}
+                    {secProjects.map(p => (
+                      <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800">{p.project_name}</span>
+                            {p.customer && <span className="text-xs text-slate-500">· {p.customer}</span>}
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => { setCustomForm({ project_code: p.project_code ?? '', project_name: p.project_name, customer: p.customer ?? '', category: activeTab, sop_date: '', completion_pct: (p.completion_pct ?? 0).toString(), status: p.status, summary_text: p.summary_text ?? '' }); setEditingCustomId(p.id); setShowForm(true); setActiveSectionTab(sec.id); }}
+                              className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️ Edit</button>
+                            <button onClick={async () => { await supabase.from("custom_projects").update({ is_visible: !p.is_visible }).eq("id", p.id); fetchData(); }}
+                              className={"px-2 py-1 rounded text-xs " + (p.is_visible !== false ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500")}>
+                              {p.is_visible !== false ? "● Visible" : "○ Hidden"}
+                            </button>
+                            <button onClick={async () => { if (!confirm("Delete?")) return; await supabase.from("custom_projects").delete().eq("id", p.id); fetchData(); }}
+                              className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
+                          </div>
+                        </div>
+                        {expandedActions === p.id && <ActionItemsPanel projectId={p.id} items={p.custom_action_items ?? []} table="custom_action_items" fkField="custom_project_id" onRefresh={fetchData} />}
+                        {expandedGantt === p.id && <div className="border-t border-slate-100 p-4 bg-purple-50 mt-2"><GanttEditor customProjectId={p.id} projectName={p.project_name} /></div>}
+                        <div className="flex gap-2 mt-2">
+                          <button onClick={() => setExpandedActions(expandedActions === p.id ? null : p.id)}
+                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">
+                            {expandedActions === p.id ? "▲ Hide" : "▼ Actions"} ({(p.custom_action_items ?? []).length})
+                          </button>
+                          <button onClick={() => setExpandedGantt(expandedGantt === p.id ? null : p.id)}
+                            className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs hover:bg-purple-100">
+                            {expandedGantt === p.id ? "▲ Hide Gantt" : "📊 Gantt"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Sections Tab */}
           {activeTab === "sections" && (

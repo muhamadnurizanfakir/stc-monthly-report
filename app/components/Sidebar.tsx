@@ -14,11 +14,14 @@ export default function Sidebar({ activeSection, onNavigate, reportLabel, report
   const [collapsed, setCollapsed] = useState(false);
   const [prodExpanded, setProdExpanded] = useState(true);
 
-  // Dynamic product development sub-categories (not coil_spring or stabilizer)
+  // Dynamic product development sub-categories
   const prodDevSections = sections.filter(s => 
-    s.section_type === 'product_development' || 
-    (!['assembly','machining','others','process_improvement'].includes(s.section_type ?? ''))
+    !['assembly','machining','others'].includes(s.section_type ?? '')
   );
+  // Fixed sections
+  const assemblySection = sections.find(s => s.section_type === 'assembly');
+  const machiningSection = sections.find(s => s.section_type === 'machining');
+  const othersSection = sections.find(s => s.section_type === 'others');
 
   const isActive = (id: string) => activeSection === id;
 
@@ -109,13 +112,13 @@ export default function Sidebar({ activeSection, onNavigate, reportLabel, report
         <NavBtn id="shohin" icon="◉" label="Process Improvement" />
 
         {/* Assembly */}
-        <NavBtn id="assembly" icon="🔧" label="Assembly" />
+        {assemblySection && <NavBtn id={'section_' + assemblySection.id} icon="🔧" label="Assembly" />}
 
         {/* Machining Parts */}
-        <NavBtn id="machining" icon="⚙️" label="Machining Parts" />
+        {machiningSection && <NavBtn id={'section_' + machiningSection.id} icon="⚙️" label="Machining Parts" />}
 
         {/* Others */}
-        <NavBtn id="others" icon="◆" label="Others" />
+        {othersSection && <NavBtn id={'section_' + othersSection.id} icon="◆" label="Others" />}
 
       </nav>
 
