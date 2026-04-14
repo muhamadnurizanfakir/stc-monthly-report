@@ -43,6 +43,7 @@ export default function DashboardClient() {
       setEngineeringProjects(eng ?? []);
       setSections(sec ?? []);
       setCustomProjects(cust ?? []);
+      console.log('Loaded:', proj?.length, 'projects,', shohin?.length, 'shohin,', eng?.length, 'eng,', sec?.length, 'sections,', cust?.length, 'custom');
       setLoadingReport(false);
     }
     initialLoad();
