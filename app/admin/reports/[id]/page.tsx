@@ -423,7 +423,7 @@ export default function ReportDetailPage() {
                   <button onClick={() => handleDeleteEng(e.id, e.project_name)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100">🗑️</button>
                 </div>
               </div>
-              {expandedActions === e.id && <ActionItemsPanel projectId={e.id} items={e.engineering_action_items ?? []} table="engineering_action_items" fkField="engineering_project_id" onRefresh={fetchData} />}
+              {expandedActions === e.id && <ActionItemsPanel projectId={e.id} items={e.engineering_action_items ?? []} table="engineering_action_items" fkField="eng_project_id" onRefresh={fetchData} />}
               {expandedGantt === e.id && <div className="border-t border-slate-100 p-4 bg-purple-50"><GanttEditor engineeringProjectId={e.id} projectName={e.project_name} /></div>}
             </div>
           ))}

@@ -178,7 +178,7 @@ export default function AdminPage() {
 
       for (const item of e.engineering_action_items ?? []) {
         await supabase.from("engineering_action_items").insert([{
-          engineering_project_id: newEng.id, item_no: item.item_no,
+          eng_project_id: newEng.id, item_no: item.item_no,
           issue_desc: item.issue_desc, action_plan: item.action_plan,
           completion_pct: item.completion_pct, due_date: item.due_date, is_info_only: item.is_info_only,
         }]);
