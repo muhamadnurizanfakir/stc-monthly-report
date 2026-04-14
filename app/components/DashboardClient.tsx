@@ -155,6 +155,51 @@ export default function DashboardClient() {
               {activeSection === "engineering" && (
                 <EngineeringSection projects={engineeringProjects} onRefresh={refreshCurrentReport} />
               )}
+              {activeSection === "assembly" && (
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h1 className="text-2xl font-bold text-slate-800">Assembly</h1>
+                      <p className="text-slate-500 text-sm mt-1">Assembly projects and operations</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
+                    <p className="text-4xl mb-3">🔧</p>
+                    <p className="text-slate-500 font-semibold">No Assembly projects yet</p>
+                    <p className="text-slate-400 text-sm mt-1">Projects will appear here once added in Admin</p>
+                  </div>
+                </div>
+              )}
+              {activeSection === "machining" && (
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h1 className="text-2xl font-bold text-slate-800">Machining Parts</h1>
+                      <p className="text-slate-500 text-sm mt-1">Machining parts projects and operations</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
+                    <p className="text-4xl mb-3">⚙️</p>
+                    <p className="text-slate-500 font-semibold">No Machining Parts projects yet</p>
+                    <p className="text-slate-400 text-sm mt-1">Projects will appear here once added in Admin</p>
+                  </div>
+                </div>
+              )}
+              {activeSection === "others" && (
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h1 className="text-2xl font-bold text-slate-800">Others</h1>
+                      <p className="text-slate-500 text-sm mt-1">Other projects and initiatives</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
+                    <p className="text-4xl mb-3">◆</p>
+                    <p className="text-slate-500 font-semibold">No other projects yet</p>
+                    <p className="text-slate-400 text-sm mt-1">Projects will appear here once added in Admin</p>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </main>

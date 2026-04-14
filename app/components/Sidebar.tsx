@@ -1,43 +1,50 @@
 'use client';
-
 import { useState } from 'react';
 import clsx from 'clsx';
 
-interface NavItem {
-  id:    string;
-  label: string;
-  icon:  string;
-}
-
 interface SidebarProps {
-  sections?: { id: string; name: string; icon: string }[];
+  sections?: { id: string; name: string; icon: string; section_type?: string }[];
   activeSection: string;
-  onNavigate:    (id: string) => void;
-  reportLabel:   string;
-  reportDate:    string;
+  onNavigate: (id: string) => void;
+  reportLabel: string;
+  reportDate: string;
 }
-
-const NAV_ITEMS: NavItem[] = [
-  { id: 'overview',    label: 'Overview',        icon: '◈' },
-  { id: 'coil_spring', label: 'Coil Spring',      icon: '⊙' },
-  { id: 'stabilizer',  label: 'Stabilizer Bar',   icon: '⊗' },
-  { id: 'shohin',      label: 'Material Change',  icon: '◉' },
-  { id: 'engineering', label: 'Engineering',      icon: '⊕' },
-];
 
 export default function Sidebar({ activeSection, onNavigate, reportLabel, reportDate, sections = [] }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [prodExpanded, setProdExpanded] = useState(true);
+
+  // Dynamic product development sub-categories (not coil_spring or stabilizer)
+  const prodDevSections = sections.filter(s => 
+    s.section_type === 'product_development' || 
+    (!['assembly','machining','others','process_improvement'].includes(s.section_type ?? ''))
+  );
+
+  const isActive = (id: string) => activeSection === id;
+
+  function NavBtn({ id, icon, label, indent = false }: { id: string; icon: string; label: string; indent?: boolean }) {
+    return (
+      <button onClick={() => onNavigate(id)}
+        className={clsx(
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-left',
+          indent ? 'pl-8' : '',
+          isActive(id) ? 'bg-orange-500/20 text-orange-400' : 'text-white/60 hover:bg-white/10 hover:text-white'
+        )}>
+        <span className="text-base shrink-0 w-5 text-center">{icon}</span>
+        {!collapsed && <span className="truncate">{label}</span>}
+      </button>
+    );
+  }
 
   return (
-    <aside
-      className={clsx(
-        'flex flex-col transition-all duration-300 shrink-0',
-        'bg-gradient-to-b from-slate-900 to-blue-950',
-        'border-r border-white/10',
-        collapsed ? 'w-16' : 'w-60'
-      )}
-      style={{ minHeight: '100vh' }}
-    >
+    <aside className={clsx(
+      'flex flex-col transition-all duration-300 shrink-0',
+      'bg-gradient-to-b from-slate-900 to-blue-950',
+      'border-r border-white/10',
+      collapsed ? 'w-16' : 'w-64'
+    )} style={{ minHeight: '100vh' }}>
+
+      {/* Header */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
         <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center shrink-0 shadow-lg">
           <span className="text-white font-bold text-lg leading-none">S</span>
@@ -48,14 +55,13 @@ export default function Sidebar({ activeSection, onNavigate, reportLabel, report
             <p className="text-white/50 text-xs leading-tight">Monthly Report</p>
           </div>
         )}
-        <button
-          className="ml-auto text-white/40 hover:text-white transition-colors text-sm"
-          onClick={() => setCollapsed(c => !c)}
-        >
+        <button className="ml-auto text-white/40 hover:text-white transition-colors text-sm"
+          onClick={() => setCollapsed(c => !c)}>
           {collapsed ? '›' : '‹'}
         </button>
       </div>
 
+      {/* Report Label */}
       {!collapsed && (
         <div className="mx-3 mt-3 mb-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
           <p className="text-orange-400 font-semibold text-xs">{reportLabel}</p>
@@ -63,24 +69,57 @@ export default function Sidebar({ activeSection, onNavigate, reportLabel, report
         </div>
       )}
 
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
-        {[...NAV_ITEMS, ...sections.map(s => ({ id: "section_" + s.id, label: s.name, icon: s.icon }))].map(item => (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+        
+        {/* Overview */}
+        <NavBtn id="overview" icon="◈" label="Overview" />
+
+        {/* Product Development Group */}
+        <div>
+          <button onClick={() => setProdExpanded(e => !e)}
             className={clsx(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-left',
-              activeSection === item.id
-                ? 'bg-orange-500/20 text-orange-400'
-                : 'text-white/60 hover:bg-white/10 hover:text-white'
+              'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left',
+              'text-white/80 hover:bg-white/10'
+            )}>
+            <span className="text-base shrink-0 w-5 text-center">🏭</span>
+            {!collapsed && (
+              <>
+                <span className="truncate flex-1">Product Development</span>
+                <span className="text-white/40 text-xs">{prodExpanded ? '▾' : '▸'}</span>
+              </>
             )}
-          >
-            <span className="text-base shrink-0 w-5 text-center">{item.icon}</span>
-            {!collapsed && <span className="truncate">{item.label}</span>}
           </button>
-        ))}
+
+          {prodExpanded && (
+            <div className="ml-2 border-l border-white/10 pl-1 space-y-0.5">
+              <NavBtn id="coil_spring" icon="⊙" label="Coil Spring" indent />
+              <NavBtn id="stabilizer" icon="⊗" label="Stabilizer Bar" indent />
+              {prodDevSections.map(s => (
+                <NavBtn key={s.id} id={"section_" + s.id} icon={s.icon || "◦"} label={s.name} indent />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Engineering */}
+        <NavBtn id="engineering" icon="⊕" label="Engineering" />
+
+        {/* Process Improvement */}
+        <NavBtn id="shohin" icon="◉" label="Process Improvement" />
+
+        {/* Assembly */}
+        <NavBtn id="assembly" icon="🔧" label="Assembly" />
+
+        {/* Machining Parts */}
+        <NavBtn id="machining" icon="⚙️" label="Machining Parts" />
+
+        {/* Others */}
+        <NavBtn id="others" icon="◆" label="Others" />
+
       </nav>
 
+      {/* Footer */}
       {!collapsed && (
         <div className="px-4 py-4 border-t border-white/10">
           <p className="text-white/30 text-xs">Sapura Industrial Berhad</p>
