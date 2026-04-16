@@ -21,6 +21,8 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
   const milestonePct = milestoneData && milestoneData.length > 0 ? milestoneData[0].milestone_progress : null;
   const totalMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].total_milestones : 0;
   const achievedMs = milestoneData && milestoneData.length > 0 ? milestoneData[0].achieved_milestones : 0;
+  const totalBars = milestoneData && milestoneData.length > 0 ? (milestoneData[0] as {total_bars?:number}).total_bars ?? 0 : 0;
+  const doneBars = milestoneData && milestoneData.length > 0 ? (milestoneData[0] as {done_bars?:number}).done_bars ?? 0 : 0;
   // auto_progress=true → use milestone %, auto_progress=false → use manual completion_pct
   const autoProgress = (project as {auto_progress?: boolean}).auto_progress !== false;
   // Only use auto if milestones exist AND at least some are achieved (avoid showing 0% auto)
@@ -79,7 +81,7 @@ export default function ProjectCard({ project, onRefresh }: ProjectCardProps) {
                 <span className="text-xs text-slate-400">Sched: {scheduledPct}%</span>
               )}
               <span className="text-xs font-bold text-slate-700">
-                {isAutoCalc ? `Auto: ${milestonePct}% (${achievedMs}/${totalMs} milestones)` : `Manual: ${project.completion_pct ?? 0}%`}
+                {isAutoCalc ? `Auto: ${milestonePct}% (${achievedMs}/${totalMs} ms · ${doneBars}/${totalBars} bars)` : `Manual: ${project.completion_pct ?? 0}%`}
               </span>
             </div>
           </div>
