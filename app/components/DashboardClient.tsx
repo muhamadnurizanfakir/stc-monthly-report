@@ -32,7 +32,7 @@ export default function DashboardClient() {
       const latest = reports[0];
       setSelectedReport(latest);
       const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
-        supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", latest.id).order("project_code"),
+        supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)").eq("report_id", latest.id).order("project_code"),
         supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", latest.id),
         supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", latest.id),
         supabase.from("sections").select("*").eq("report_id", latest.id).order("sort_order"),
@@ -53,7 +53,7 @@ export default function DashboardClient() {
     if (!selectedReport) return;
     const reportId = selectedReport?.id ?? '';
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
-      supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId).order("project_code"),
+      supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
@@ -72,7 +72,7 @@ export default function DashboardClient() {
     setLoadingReport(true);
     setSelectedReport(report);
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
-      supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)").eq("report_id", reportId).order("project_code"),
+      supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),

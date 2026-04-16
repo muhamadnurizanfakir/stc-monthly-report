@@ -134,7 +134,7 @@ export async function getLatestReport(): Promise<Report | null> {
 export async function getProjectsByReport(reportId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
-    .select('*, action_items(*), milestones(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)')
+    .select('*, action_items(*), milestones(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)')
     .eq('report_id', reportId)
     .order('project_code');
   if (error) { console.error(error); return []; }
@@ -222,7 +222,7 @@ export async function getCustomProjectsBySection(sectionId: string): Promise<Cus
 export async function getCustomProjectsByReport(reportId: string): Promise<CustomProject[]> {
   const { data, error } = await supabase
     .from('custom_projects')
-    .select('*, custom_action_items(*), project_milestone_progress!project_id(milestone_progress, total_milestones, achieved_milestones)')
+    .select('*, custom_action_items(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)')
     .eq('report_id', reportId)
     .order('sort_order');
   if (error) { console.error(error); return []; }
