@@ -32,18 +32,33 @@ export default function DashboardClient() {
       const latest = reports[0];
       setSelectedReport(latest);
       const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
-        supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)").eq("report_id", latest.id).order("project_code"),
+        supabase.from("projects").select("*, action_items(*), milestones(*)").eq("report_id", latest.id).order("project_code"),
         supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", latest.id),
         supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", latest.id),
         supabase.from("sections").select("*").eq("report_id", latest.id).order("sort_order"),
         supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", latest.id),
       ]);
-      setProjects(proj ?? []);
+      // Fetch milestone progress separately and merge
+      const projectIds = (proj ?? []).map((p: {id: string}) => p.id);
+      const milestoneMap: Record<string, {milestone_progress: number|null; total_milestones: number; achieved_milestones: number; total_bars: number; done_bars: number}> = {};
+      if (projectIds.length > 0) {
+        const { data: mpData } = await supabase.from("project_milestone_progress")
+          .select("project_id, milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars")
+          .in("project_id", projectIds);
+        (mpData ?? []).forEach((mp: {project_id: string; milestone_progress: number|null; total_milestones: number; achieved_milestones: number; total_bars: number; done_bars: number}) => {
+          milestoneMap[mp.project_id] = mp;
+        });
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const projWithMilestones = (proj ?? []).map((p: any) => ({
+        ...p,
+        project_milestone_progress: milestoneMap[p.id] ? [milestoneMap[p.id]] : [],
+      })) as Project[];
+      setProjects(projWithMilestones);
       setShohinProjects(shohin ?? []);
       setEngineeringProjects(eng ?? []);
       setSections(sec ?? []);
       setCustomProjects(cust ?? []);
-      console.log('Loaded:', proj?.length, 'projects,', shohin?.length, 'shohin,', eng?.length, 'eng,', sec?.length, 'sections,', cust?.length, 'custom');
       setLoadingReport(false);
     }
     initialLoad();
@@ -53,7 +68,7 @@ export default function DashboardClient() {
     if (!selectedReport) return;
     const reportId = selectedReport?.id ?? '';
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
-      supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)").eq("report_id", reportId).order("project_code"),
+      supabase.from("projects").select("*, action_items(*), milestones(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
@@ -72,13 +87,26 @@ export default function DashboardClient() {
     setLoadingReport(true);
     setSelectedReport(report);
     const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
-      supabase.from("projects").select("*, action_items(*), milestones(*), project_milestone_progress(milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars)").eq("report_id", reportId).order("project_code"),
+      supabase.from("projects").select("*, action_items(*), milestones(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
       supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
     ]);
-    setProjects(proj ?? []);
+    // Merge milestone progress
+    const projectIds2 = (proj ?? []).map((p: {id: string}) => p.id);
+    const milestoneMap2: Record<string, object> = {};
+    if (projectIds2.length > 0) {
+      const { data: mpData2 } = await supabase.from("project_milestone_progress")
+        .select("project_id, milestone_progress, total_milestones, achieved_milestones, total_bars, done_bars")
+        .in("project_id", projectIds2);
+      (mpData2 ?? []).forEach((mp: {project_id: string}) => { milestoneMap2[mp.project_id] = mp; });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const projWithMs2 = (proj ?? []).map((p: any) => ({
+      ...p, project_milestone_progress: milestoneMap2[p.id] ? [milestoneMap2[p.id]] : [],
+    })) as Project[];
+    setProjects(projWithMs2);
     setShohinProjects(shohin ?? []);
     setEngineeringProjects(eng ?? []);
     setSections(sec ?? []);
