@@ -21,14 +21,14 @@ export function StatusBadge({ status }: { status: ProjectStatus }) {
 export function ProgressBar({ pct, color }: { pct: number; color?: string }) {
   const fillColor = color ?? (pct === 100 ? '#16a34a' : pct >= 70 ? '#2563eb' : pct >= 40 ? '#f59e0b' : '#dc2626');
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
-        <div
-          className="h-1.5 rounded-full transition-all duration-500"
-          style={{ width: `${Math.min(pct, 100)}%`, background: fillColor }}
-        />
-      </div>
-      <span className="text-xs font-bold text-slate-600 w-8 text-right shrink-0">{pct}%</span>
+    <div className="relative h-4 bg-slate-100 rounded-full overflow-hidden">
+      <div
+        className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
+        style={{ width: `${Math.min(pct, 100)}%`, background: fillColor }}
+      />
+      <span className="absolute right-2 top-0 h-full flex items-center text-xs font-bold text-white mix-blend-difference">
+        {pct}%
+      </span>
     </div>
   );
 }
