@@ -19,8 +19,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export default function ShohinSection({ shohinProjects, onRefresh }: Props) {
-  const [expandedGantt, setExpandedGantt] = useState<string | null>(null);
-  const [expandedActions, setExpandedActions] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [showHidden, setShowHidden] = useState(false);
 
   const visible = shohinProjects.filter(p => p.is_visible !== false);
@@ -51,7 +50,6 @@ export default function ShohinSection({ shohinProjects, onRefresh }: Props) {
         <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
           <p className="text-4xl mb-3">◉</p>
           <p className="text-slate-500 font-semibold">No projects yet</p>
-          <p className="text-slate-400 text-sm mt-1">Add projects in Admin panel</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -59,81 +57,39 @@ export default function ShohinSection({ shohinProjects, onRefresh }: Props) {
             const autoProgress = project.auto_progress !== false;
             const pct = project.completion_pct ?? 0;
             const style = STATUS_COLORS[project.status] ?? STATUS_COLORS.on_track;
+            const actionItems = [...(project.shohin_action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
+            const isExpanded = expanded === project.id;
             return (
               <div key={project.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        {project.project_code && (
-                          <span className="text-xs font-mono text-slate-400">{project.project_code}</span>
-                        )}
+                        {project.project_code && <span className="text-xs font-mono text-slate-400">{project.project_code}</span>}
                         <h3 className="font-bold text-slate-800">{project.project_name}</h3>
                         <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
                           style={{ background: style.bg, color: style.text }}>
-                          {project.status.replace('_', ' ')}
+                          {project.status.replace('_',' ')}
                         </span>
-                        {project.category && (
-                          <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full text-xs">{project.category}</span>
-                        )}
+                        {project.category && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full text-xs">{project.category}</span>}
                       </div>
                       <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                         {project.customer && <span>👤 {project.customer}</span>}
-                        {(project as {model?: string|null}).model && <span>🚗 {(project as {model?: string|null}).model}</span>}
-                        {project.sop_date && <span>📅 SOP: {new Date(project.sop_date).toLocaleDateString('en-MY', { month: 'short', year: 'numeric' })}</span>}
-                        {(project as {volume?: number|null}).volume && <span>📦 {((project as {volume?: number|null}).volume ?? 0).toLocaleString()} units</span>}
+                        {project.model && <span>🚗 {project.model}</span>}
+                        {project.sop_date && <span>📅 SOP: {new Date(project.sop_date).toLocaleDateString('en-MY', { month:'short', year:'numeric' })}</span>}
+                        {project.volume && <span>📦 {project.volume.toLocaleString()} units</span>}
                       </div>
                     </div>
                     <div className="text-right ml-4 shrink-0">
-                      <span className="text-xs font-bold text-slate-700">
-                        {autoProgress ? `Auto: ${pct}%` : `Manual: ${pct}%`}
-                      </span>
+                      <p className="text-xs font-bold text-slate-700">{autoProgress ? `Auto: ${pct}%` : `Manual: ${pct}%`}</p>
                     </div>
                   </div>
                   <ProgressBar pct={pct} />
-                  {project.summary_text && (
-                    <p className="text-xs text-slate-500 mt-3 leading-relaxed">{project.summary_text}</p>
-                  )}
-
-                  {/* Action Items */}
-                  {(project.shohin_action_items ?? []).length > 0 && expandedActions === project.id && (
-                    <div className="mt-4 border-t border-slate-100 pt-3">
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Action Items</p>
-                      <div className="space-y-2">
-                        {(project.shohin_action_items ?? []).map(item => (
-                          <div key={item.id} className="flex items-start gap-2 text-xs">
-                            <span className={"shrink-0 mt-0.5 " + (item.is_info_only ? 'text-blue-500' : item.completion_pct === 100 ? 'text-green-500' : 'text-orange-500')}>
-                              {item.is_info_only ? 'ℹ' : item.completion_pct === 100 ? '✓' : '→'}
-                            </span>
-                            <div className="flex-1">
-                              <p className="text-slate-700">{item.issue_desc}</p>
-                              {item.action_plan && <p className="text-slate-400 mt-0.5">{item.action_plan}</p>}
-                            </div>
-                            {!item.is_info_only && (
-                              <span className="shrink-0 text-slate-400">{item.completion_pct}%</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Gantt */}
-                  {expandedGantt === project.id && (
-                    <div className="mt-4 border-t border-slate-100 pt-3">
-                      <GanttChart shohinProjectId={project.id} />
-                    </div>
-                  )}
-
-                  {/* Buttons */}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
-                    <button onClick={() => setExpandedActions(expandedActions === project.id ? null : project.id)}
-                      className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs hover:bg-blue-100">
-                      {expandedActions === project.id ? '▲ Hide' : '▼ Actions'} ({(project.shohin_action_items ?? []).length})
-                    </button>
-                    <button onClick={() => setExpandedGantt(expandedGantt === project.id ? null : project.id)}
-                      className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs hover:bg-purple-100">
-                      {expandedGantt === project.id ? '▲ Hide Gantt' : '📊 Gantt'}
+                  {project.summary_text && <p className="text-xs text-slate-500 mt-3 leading-relaxed">{project.summary_text}</p>}
+                  <div className="flex gap-2 mt-3">
+                    <button onClick={() => setExpanded(isExpanded ? null : project.id)}
+                      className="text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors">
+                      {isExpanded ? '▲ Hide Details' : '▼ Show Gantt & Action Items'}
                     </button>
                     <button onClick={() => toggleVisibility(project.id, project.is_visible !== false)}
                       className={"ml-auto px-3 py-1.5 rounded-lg text-xs " + (project.is_visible !== false ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500")}>
@@ -141,6 +97,52 @@ export default function ShohinSection({ shohinProjects, onRefresh }: Props) {
                     </button>
                   </div>
                 </div>
+                {isExpanded && (
+                  <div>
+                    <div className="p-4 bg-slate-50 border-t border-slate-200">
+                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Gantt Chart</p>
+                      <GanttChart shohinProjectId={project.id} />
+                    </div>
+                    {actionItems.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-blue-950 border-t border-blue-900">
+                          <p className="text-xs font-bold text-white uppercase tracking-wider">Action Items</p>
+                        </div>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                              <th className="text-left px-4 py-2 font-semibold text-slate-500 w-8">No.</th>
+                              <th className="text-left px-4 py-2 font-semibold text-slate-500 w-24">Category</th>
+                              <th className="text-left px-4 py-2 font-semibold text-slate-500">Issue / Status</th>
+                              <th className="text-left px-4 py-2 font-semibold text-slate-500">Action Plan</th>
+                              <th className="text-left px-4 py-2 font-semibold text-slate-500 w-16">Due</th>
+                              <th className="text-right px-4 py-2 font-semibold text-slate-500 w-12">%</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {actionItems.map((item, idx) => (
+                              <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                                <td className="px-4 py-2.5 text-slate-400">{item.item_no ?? idx + 1}</td>
+                                <td className="px-4 py-2.5 text-slate-500">{item.item_category ?? '—'}</td>
+                                <td className="px-4 py-2.5 text-slate-700 font-medium">{item.issue_desc}</td>
+                                <td className="px-4 py-2.5 text-slate-600">{item.action_plan ?? '—'}</td>
+                                <td className="px-4 py-2.5 text-slate-400">
+                                  {item.due_date ? new Date(item.due_date).toLocaleDateString('en-MY', { day:'numeric', month:'short' }) : '—'}
+                                </td>
+                                <td className="px-4 py-2.5 text-right">
+                                  {item.is_info_only
+                                    ? <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">Info</span>
+                                    : <span className="font-semibold text-slate-700">{item.completion_pct}%</span>
+                                  }
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
