@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { ProgressBar } from './StatusBadge';
-import GanttEditor from '../admin/reports/[id]/GanttEditor';
+import GanttChart from './GanttChart';
 import type { MachiningProject } from '../lib/supabase';
 
 interface Props {
@@ -97,7 +97,7 @@ export default function MachiningSection({ projects }: Props) {
 
                   {expandedGantt === project.id && (
                     <div className="mt-4 border-t border-slate-100 pt-3">
-                      <GanttEditor machiningProjectId={project.id} projectName={project.project_name} />
+                      <GanttChart machiningProjectId={project.id} />
                     </div>
                   )}
 

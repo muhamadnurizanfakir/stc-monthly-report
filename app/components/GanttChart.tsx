@@ -33,6 +33,9 @@ interface Props {
   reportId?: string;
   customProjectId?: string;
   sectionId?: string;
+  assemblyProjectId?: string;
+  machiningProjectId?: string;
+  othersProjectId?: string;
 }
 
 const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -134,7 +137,7 @@ function assignLanes(bars: GanttBar[]): { bar: GanttBar; lane: number }[] {
   return [...planLanes, ...otherLanes];
 }
 
-export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId }: Props) {
+export default function GanttChart({ projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId, assemblyProjectId, machiningProjectId, othersProjectId }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -147,6 +150,9 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
       if (projectId) query = query.eq("project_id", projectId);
       else if (shohinProjectId) query = query.eq("shohin_project_id", shohinProjectId);
       else if (engineeringProjectId) query = query.eq("engineering_project_id", engineeringProjectId);
+      else if (assemblyProjectId) query = query.eq("assembly_project_id", assemblyProjectId);
+      else if (machiningProjectId) query = query.eq("machining_project_id", machiningProjectId);
+      else if (othersProjectId) query = query.eq("others_project_id", othersProjectId);
       else if (reportId) query = query.eq("report_id", reportId);
       else if (customProjectId) query = query.eq("custom_project_id", customProjectId);
       else if (sectionId) query = query.eq("section_id", sectionId);
@@ -155,7 +161,7 @@ export default function GanttChart({ projectId, shohinProjectId, engineeringProj
       setLoading(false);
     }
     load();
-  }, [projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId]);
+  }, [projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId, assemblyProjectId, machiningProjectId, othersProjectId]);
 
   const { months, start, totalDays, pd: pdFn } = useMemo(() => buildRange(activities), [activities]);
 

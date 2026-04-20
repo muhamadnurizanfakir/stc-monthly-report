@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { ProgressBar } from './StatusBadge';
-import GanttEditor from '../admin/reports/[id]/GanttEditor';
+import GanttChart from './GanttChart';
 import type { ShohinProject } from '../lib/supabase';
 
 interface Props {
@@ -121,7 +121,7 @@ export default function ShohinSection({ shohinProjects, onRefresh }: Props) {
                   {/* Gantt */}
                   {expandedGantt === project.id && (
                     <div className="mt-4 border-t border-slate-100 pt-3">
-                      <GanttEditor shohinProjectId={project.id} projectName={project.project_name} />
+                      <GanttChart shohinProjectId={project.id} />
                     </div>
                   )}
 
