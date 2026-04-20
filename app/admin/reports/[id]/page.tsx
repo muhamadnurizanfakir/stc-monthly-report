@@ -47,7 +47,6 @@ export default function ReportDetailPage() {
   const [editingEngId, setEditingEngId] = useState<string | null>(null);
   const [expandedActions, setExpandedActions] = useState<string | null>(null);
   const [expandedGantt, setExpandedGantt] = useState<string | null>(null);
-  const [sections] = useState<{ id: string; name: string; icon: string; color: string; display_mode: string; sort_order: number }[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeSectionTab, setActiveSectionTab] = useState<string | null>(null);
   const [showCustomProjectForm, setShowCustomProjectForm] = useState(false);
@@ -165,8 +164,9 @@ export default function ReportDetailPage() {
         </div>
         <button onClick={() => {
           if (activeTab === "assembly" || activeTab === "machining" || activeTab === "others") {
-            const sec = sections.find(s => (s as {section_type?:string}).section_type === activeTab);
-            if (sec) { setActiveSectionTab(sec.id); setCustomForm({ project_code: '', project_name: '', customer: '', category: activeTab, sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '', auto_progress: true }); setEditingCustomId(null); setShowCustomProjectForm(true); }
+            setCustomForm({ project_code: '', project_name: '', customer: '', category: activeTab, sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '', auto_progress: true });
+            setEditingCustomId(null);
+            setShowCustomProjectForm(true);
           }
           else { setShowForm(true); setEditingId(null); setEditingShohinId(null); setEditingEngId(null); setForm(emptyProject); setShohinForm(emptyShohin); setEngForm(emptyEng); }
         }}
