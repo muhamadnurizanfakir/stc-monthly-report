@@ -62,7 +62,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
       ...othersProjects.map(p => p.id),
     ];
     if (allIds.length > 0) fetchMilestoneProgress(allIds).then(setMilestoneMap);
-  }, [projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects]);
+  }, [projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects, milestoneMap]);
   const stats = useMemo(() => {
     const allVisible = [
       ...projects.filter(p => p.is_visible !== false),
@@ -116,7 +116,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
       return a.cat.localeCompare(b.cat);
     });
     return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory, allVisible, categoryProgress };
-  }, [projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects]);
+  }, [projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects, milestoneMap]);
 
   const kpis = [
     { label: 'Total Projects',   value: stats.total,        sub: 'active this period',   color: '#1e3a8a' },
