@@ -18,8 +18,8 @@ const STATUSES = [
   { value: "completed", label: "Completed" },
 ];
 const emptyProject = { project_code: "", project_name: "", category: "coil_spring", customer: "", model: "", start_date: "", sop_date: "", volume: "", completion_pct: "0", status: "on_track", summary_text: "", auto_progress: true };
-const emptyShohin = { project_code: "", project_name: "", customer: "", category: "Material Change", sop_date: "", completion_pct: "0", status: "on_track", summary_text: "" };
-const emptyEng = { project_code: "", project_name: "", customer: "", model: "", sop_date: "", volume: "", category: "Engineering", summary_text: "", completion_pct: "0", status: "on_track" };
+const emptyShohin = { project_code: "", project_name: "", customer: "", category: "Material Change", sop_date: "", completion_pct: "0", status: "on_track", summary_text: "", auto_progress: true };
+const emptyEng = { project_code: "", project_name: "", customer: "", model: "", sop_date: "", volume: "", category: "Engineering", summary_text: "", completion_pct: "0", status: "on_track", auto_progress: true };
 
 interface ShohinRow { id: string; project_code: string | null; project_name: string; customer: string | null; category: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; shohin_action_items?: ActionItemRow[]; }
 interface EngRow { id: string; project_name: string; customer: string | null; model: string | null; sop_date: string | null; volume: number | null; category: string | null; summary_text: string | null; completion_pct: number; status: string; is_visible: boolean; engineering_action_items?: ActionItemRow[]; }
@@ -104,12 +104,12 @@ export default function ReportDetailPage() {
   // ---- Shohin CRUD ----
   function startEditShohin(s: ShohinRow) {
     setEditingShohinId(s.id); setShowForm(true);
-    setShohinForm({ project_code: s.project_code ?? "", project_name: s.project_name, customer: s.customer ?? "", category: s.category ?? "Material Change", sop_date: (s as {sop_date?: string|null}).sop_date ?? "", completion_pct: s.completion_pct.toString(), status: s.status, summary_text: s.summary_text ?? "" });
+    setShohinForm({ project_code: s.project_code ?? "", project_name: s.project_name, customer: s.customer ?? "", category: s.category ?? "Material Change", sop_date: (s as {sop_date?: string|null}).sop_date ?? "", completion_pct: s.completion_pct.toString(), status: s.status, summary_text: s.summary_text ?? "", auto_progress: (s as {auto_progress?: boolean}).auto_progress ?? true });
   }
   async function handleSaveShohin() {
     if (!shohinForm.project_name) { alert("Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_code: shohinForm.project_code || null, project_name: shohinForm.project_name, customer: shohinForm.customer || null, category: shohinForm.category || null, sop_date: shohinForm.sop_date || null, completion_pct: parseInt(shohinForm.completion_pct), status: shohinForm.status, summary_text: shohinForm.summary_text || null };
+    const payload = { report_id: reportId, project_code: shohinForm.project_code || null, project_name: shohinForm.project_name, customer: shohinForm.customer || null, category: shohinForm.category || null, sop_date: shohinForm.sop_date || null, completion_pct: parseInt(shohinForm.completion_pct), status: shohinForm.status, summary_text: shohinForm.summary_text || null, auto_progress: (shohinForm as {auto_progress?: boolean}).auto_progress ?? true };
     if (editingShohinId) await supabase.from("shohin_projects").update(payload).eq("id", editingShohinId);
     else await supabase.from("shohin_projects").insert([payload]);
     setSuccessMsg("Saved!"); setShowForm(false); setEditingShohinId(null);
@@ -124,12 +124,12 @@ export default function ReportDetailPage() {
   // ---- Engineering CRUD ----
   function startEditEng(e: EngRow) {
     setEditingEngId(e.id); setShowForm(true);
-    setEngForm({ project_code: (e as {project_code?: string|null}).project_code ?? "", project_name: e.project_name, customer: e.customer ?? "", model: e.model ?? "", sop_date: e.sop_date ?? "", volume: e.volume?.toString() ?? "", category: e.category ?? "Engineering", summary_text: e.summary_text ?? "", completion_pct: e.completion_pct.toString(), status: e.status });
+    setEngForm({ project_code: (e as {project_code?: string|null}).project_code ?? "", project_name: e.project_name, customer: e.customer ?? "", model: e.model ?? "", sop_date: e.sop_date ?? "", volume: e.volume?.toString() ?? "", category: e.category ?? "Engineering", summary_text: e.summary_text ?? "", completion_pct: e.completion_pct.toString(), status: e.status, auto_progress: (e as {auto_progress?: boolean}).auto_progress ?? true });
   }
   async function handleSaveEng() {
     if (!engForm.project_name) { alert("Name required"); return; }
     setSaving(true);
-    const payload = { report_id: reportId, project_name: engForm.project_name, customer: engForm.customer || null, model: engForm.model || null, sop_date: engForm.sop_date || null, volume: engForm.volume ? parseInt(engForm.volume) : null, category: engForm.category || null, summary_text: engForm.summary_text || null, completion_pct: parseInt(engForm.completion_pct), status: engForm.status };
+    const payload = { report_id: reportId, project_name: engForm.project_name, customer: engForm.customer || null, model: engForm.model || null, sop_date: engForm.sop_date || null, volume: engForm.volume ? parseInt(engForm.volume) : null, category: engForm.category || null, summary_text: engForm.summary_text || null, completion_pct: parseInt(engForm.completion_pct), status: engForm.status, auto_progress: (engForm as {auto_progress?: boolean}).auto_progress ?? true };
     if (editingEngId) await supabase.from("engineering_projects").update(payload).eq("id", editingEngId);
     else await supabase.from("engineering_projects").insert([payload]);
     setSuccessMsg("Saved!"); setShowForm(false); setEditingEngId(null);
@@ -252,8 +252,19 @@ export default function ReportDetailPage() {
               <input type="text" value={shohinForm.category} onChange={e => setShohinForm({ ...shohinForm, category: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">SOP Date</label>
               <input type="date" value={shohinForm.sop_date} onChange={e => setShohinForm({ ...shohinForm, sop_date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Progress Mode</label>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShohinForm({ ...shohinForm, auto_progress: true })}
+                  className={"px-3 py-1.5 rounded-lg text-xs font-semibold border " + ((shohinForm as {auto_progress?: boolean}).auto_progress !== false ? "bg-green-600 text-white border-green-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}>
+                  🤖 Auto (from milestones)
+                </button>
+                <button type="button" onClick={() => setShohinForm({ ...shohinForm, auto_progress: false })}
+                  className={"px-3 py-1.5 rounded-lg text-xs font-semibold border " + ((shohinForm as {auto_progress?: boolean}).auto_progress === false ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}>
+                  ✏️ Manual
+                </button>
+              </div></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
-              <input type="number" min="0" max="100" value={shohinForm.completion_pct} onChange={e => setShohinForm({ ...shohinForm, completion_pct: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <input type="number" min="0" max="100" value={shohinForm.completion_pct} onChange={e => setShohinForm({ ...shohinForm, completion_pct: e.target.value })} disabled={(shohinForm as {auto_progress?: boolean}).auto_progress !== false} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-400" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
               <select value={shohinForm.status} onChange={e => setShohinForm({ ...shohinForm, status: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -286,8 +297,19 @@ export default function ReportDetailPage() {
               <input type="date" value={engForm.sop_date} onChange={e => setEngForm({ ...engForm, sop_date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Summary</label>
               <textarea value={engForm.summary_text} onChange={e => setEngForm({ ...engForm, summary_text: e.target.value })} rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Progress Mode</label>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setEngForm({ ...engForm, auto_progress: true })}
+                  className={"px-3 py-1.5 rounded-lg text-xs font-semibold border " + ((engForm as {auto_progress?: boolean}).auto_progress !== false ? "bg-green-600 text-white border-green-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}>
+                  🤖 Auto (from milestones)
+                </button>
+                <button type="button" onClick={() => setEngForm({ ...engForm, auto_progress: false })}
+                  className={"px-3 py-1.5 rounded-lg text-xs font-semibold border " + ((engForm as {auto_progress?: boolean}).auto_progress === false ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}>
+                  ✏️ Manual
+                </button>
+              </div></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
-              <input type="number" min="0" max="100" value={engForm.completion_pct} onChange={e => setEngForm({ ...engForm, completion_pct: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <input type="number" min="0" max="100" value={engForm.completion_pct} onChange={e => setEngForm({ ...engForm, completion_pct: e.target.value })} disabled={(engForm as {auto_progress?: boolean}).auto_progress !== false} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-400" /></div>
             <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
               <select value={engForm.status} onChange={e => setEngForm({ ...engForm, status: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
