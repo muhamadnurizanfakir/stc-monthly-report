@@ -50,8 +50,9 @@ export default function ReportDetailPage() {
   const [sections, setSections] = useState<{ id: string; name: string; icon: string; color: string; display_mode: string; sort_order: number }[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeSectionTab, setActiveSectionTab] = useState<string | null>(null);
+  const [showCustomProjectForm, setShowCustomProjectForm] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [customForm, setCustomForm] = useState({ project_code: '', project_name: '', customer: '', category: '', sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '' });
+  const [customForm, setCustomForm] = useState({ project_code: '', project_name: '', customer: '', category: '', sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '', auto_progress: true });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
   const [customProjects, setCustomProjects] = useState<{ id: string; section_id: string; project_code: string | null; project_name: string; customer: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; custom_action_items?: {id:string;item_no:number|null;issue_desc:string;action_plan:string|null;completion_pct:number;due_date:string|null;is_info_only:boolean}[] }[]>([]);
@@ -161,7 +162,7 @@ export default function ReportDetailPage() {
         <button onClick={() => {
           if (activeTab === "assembly" || activeTab === "machining" || activeTab === "others") {
             const sec = sections.find(s => (s as {section_type?:string}).section_type === activeTab);
-            if (sec) { setActiveSectionTab(sec.id); setCustomForm({ project_code: '', project_name: '', customer: '', category: activeTab, sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '' }); setEditingCustomId(null); setShowForm(true); }
+            if (sec) { setActiveSectionTab(sec.id); setCustomForm({ project_code: '', project_name: '', customer: '', category: activeTab, sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '', auto_progress: true }); setEditingCustomId(null); setShowCustomProjectForm(true); }
           }
           else { setShowForm(true); setEditingId(null); setEditingShohinId(null); setEditingEngId(null); setForm(emptyProject); setShohinForm(emptyShohin); setEngForm(emptyEng); }
         }}
@@ -322,6 +323,52 @@ export default function ReportDetailPage() {
         </div>
       )}
 
+
+      {showCustomProjectForm && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-4">
+          <h2 className="font-bold text-slate-800 mb-4">{editingCustomId ? "Edit Project" : "Add Project"} — {activeTab === 'assembly' ? 'Assembly' : activeTab === 'machining' ? 'Machining Parts' : 'Others'}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Project Code</label>
+              <input type="text" value={customForm.project_code} onChange={e => setCustomForm({ ...customForm, project_code: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Project Name *</label>
+              <input type="text" value={customForm.project_name} onChange={e => setCustomForm({ ...customForm, project_name: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
+              <input type="text" value={customForm.customer} onChange={e => setCustomForm({ ...customForm, customer: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+              <select value={customForm.status} onChange={e => setCustomForm({ ...customForm, status: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select></div>
+            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Progress Mode</label>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setCustomForm({ ...customForm, auto_progress: true })}
+                  className={"px-3 py-1.5 rounded-lg text-xs font-semibold border " + ((customForm as {auto_progress?: boolean}).auto_progress !== false ? "bg-green-600 text-white border-green-600" : "bg-white text-slate-600 border-slate-200")}>
+                  🤖 Auto (from milestones)
+                </button>
+                <button type="button" onClick={() => setCustomForm({ ...customForm, auto_progress: false })}
+                  className={"px-3 py-1.5 rounded-lg text-xs font-semibold border " + ((customForm as {auto_progress?: boolean}).auto_progress === false ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200")}>
+                  ✏️ Manual
+                </button>
+              </div></div>
+            <div><label className="block text-xs font-semibold text-slate-600 mb-1">Completion %</label>
+              <input type="number" min="0" max="100" value={customForm.completion_pct} onChange={e => setCustomForm({ ...customForm, completion_pct: e.target.value })} disabled={(customForm as {auto_progress?: boolean}).auto_progress !== false} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-400" /></div>
+            <div className="md:col-span-2"><label className="block text-xs font-semibold text-slate-600 mb-1">Summary</label>
+              <textarea value={customForm.summary_text} onChange={e => setCustomForm({ ...customForm, summary_text: e.target.value })} rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button onClick={async () => {
+              if (!customForm.project_name) { alert("Name required"); return; }
+              setSaving(true);
+              const payload = { section_id: activeSectionTab, project_code: customForm.project_code || null, project_name: customForm.project_name, customer: customForm.customer || null, category: customForm.category || null, completion_pct: parseInt(customForm.completion_pct), status: customForm.status, summary_text: customForm.summary_text || null, auto_progress: (customForm as {auto_progress?: boolean}).auto_progress ?? true };
+              if (editingCustomId) await supabase.from("custom_projects").update(payload).eq("id", editingCustomId);
+              else await supabase.from("custom_projects").insert([payload]);
+              setSuccessMsg("Project saved!"); setShowCustomProjectForm(false); setEditingCustomId(null); fetchData(); setSaving(false);
+            }} disabled={saving} className="px-4 py-2 bg-blue-950 text-white rounded-lg text-sm font-semibold hover:bg-blue-900 disabled:opacity-50">
+              {saving ? "Saving..." : editingCustomId ? "Update" : "Add"}
+            </button>
+            <button onClick={() => { setShowCustomProjectForm(false); setEditingCustomId(null); }} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancel</button>
+          </div>
+        </div>
+      )}
       {loading ? (
         <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400">Loading...</div>
       ) : (
@@ -485,7 +532,7 @@ export default function ReportDetailPage() {
                             {p.customer && <span className="text-xs text-slate-500">· {p.customer}</span>}
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setCustomForm({ project_code: p.project_code ?? '', project_name: p.project_name, customer: p.customer ?? '', category: activeTab, sop_date: '', completion_pct: (p.completion_pct ?? 0).toString(), status: p.status, summary_text: p.summary_text ?? '' }); setEditingCustomId(p.id); setShowForm(true); setActiveSectionTab(sec.id); }}
+                            <button onClick={() => { setCustomForm({ project_code: p.project_code ?? '', project_name: p.project_name, customer: p.customer ?? '', category: activeTab, sop_date: '', completion_pct: (p.completion_pct ?? 0).toString(), status: p.status, summary_text: p.summary_text ?? '', auto_progress: (p as {auto_progress?: boolean}).auto_progress ?? true }); setEditingCustomId(p.id); setShowCustomProjectForm(true); setActiveSectionTab(sec.id); }}
                               className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️ Edit</button>
                             <button onClick={async () => { await supabase.from("custom_projects").update({ is_visible: !p.is_visible }).eq("id", p.id); fetchData(); }}
                               className={"px-2 py-1 rounded text-xs " + (p.is_visible !== false ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500")}>
