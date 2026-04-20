@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Project, ShohinProject, EngineeringProject, AssemblyProject, MachiningProject, OthersProject } from '../lib/supabase';
 import { StatusBadge, ProgressBar } from './StatusBadge';
+import { fetchMilestoneProgress, calcProgress } from '../lib/progressUtils';
+import type { MilestoneProgress } from '../lib/progressUtils';
 
 interface OverviewProps {
   projects:            Project[];
@@ -48,6 +50,19 @@ const CAT_LABELS: Record<string, string> = {
 };
 
 export default function OverviewSection({ projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects, reportLabel }: OverviewProps) {
+  const [milestoneMap, setMilestoneMap] = useState<Record<string, MilestoneProgress>>({});
+
+  useEffect(() => {
+    const allIds = [
+      ...projects.map(p => p.id),
+      ...shohinProjects.map(p => p.id),
+      ...engineeringProjects.map(p => p.id),
+      ...assemblyProjects.map(p => p.id),
+      ...machiningProjects.map(p => p.id),
+      ...othersProjects.map(p => p.id),
+    ];
+    if (allIds.length > 0) fetchMilestoneProgress(allIds).then(setMilestoneMap);
+  }, [projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects]);
   const stats = useMemo(() => {
     const allVisible = [
       ...projects.filter(p => p.is_visible !== false),
@@ -59,9 +74,10 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
     ];
     const total     = allVisible.length;
     const onTrack   = allVisible.filter(p => p.status === 'on_track').length;
-    const completed = allVisible.filter(p => (p.completion_pct ?? 0) === 100).length;
+    const getPct = (p: {id: string; completion_pct?: number|null; auto_progress?: boolean}) => calcProgress(p.id, p.completion_pct ?? 0, p.auto_progress !== false, milestoneMap).pct;
+    const completed = allVisible.filter(p => getPct(p) === 100).length;
     const delayed   = allVisible.filter(p => p.status === 'delayed' || p.status === 'at_risk').length;
-    const avgPct    = Math.round(allVisible.reduce((s, p) => s + (p.completion_pct ?? 0), 0) / (allVisible.length || 1));
+    const avgPct    = Math.round(allVisible.reduce((s, p) => s + getPct(p), 0) / (allVisible.length || 1));
     const statusDist = [
       { name: 'On Track',  value: onTrack,   color: '#16a34a' },
       { name: 'Completed', value: completed,  color: '#2563eb' },
@@ -79,7 +95,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
         const cat = (p as {category?: string}).category ?? 'Other';
         if (!acc[cat]) acc[cat] = { total: 0, sum: 0 };
         acc[cat].total += 1;
-        acc[cat].sum += (p.completion_pct ?? 0);
+        acc[cat].sum += calcProgress(p.id, p.completion_pct ?? 0, (p as {auto_progress?: boolean}).auto_progress !== false, milestoneMap).pct;
         return acc;
       }, {} as Record<string, { total: number; sum: number }>)
     ).map(([cat, { total, sum }]) => ({
@@ -246,7 +262,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                     {(() => { const s = (p as {sop_date?: string|null}).sop_date; return s ? new Date(s).toLocaleDateString('en-MY', { month: 'short', year: '2-digit' }) : '—'; })()}
                   </td>
                   <td className="py-2 px-4 w-36">
-                    <ProgressBar pct={p.completion_pct ?? 0} />
+                    <ProgressBar pct={calcProgress(p.id, p.completion_pct ?? 0, (p as {auto_progress?: boolean}).auto_progress !== false, milestoneMap).pct} />
                   </td>
                   <td className="py-2 px-4"><StatusBadge status={p.status as import("../lib/supabase").ProjectStatus} /></td>
                 </tr>
