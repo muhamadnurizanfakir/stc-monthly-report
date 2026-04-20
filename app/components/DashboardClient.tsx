@@ -3,14 +3,16 @@
 import { useState, useEffect } from "react";
 import type { Report, Project, ShohinProject, EngineeringProject } from "../lib/supabase";
 import { supabase } from "../lib/supabase";
-import type { Section, CustomProject } from "../lib/supabase";
-import CustomSection from "./CustomSection";
+import type { Section, AssemblyProject, MachiningProject, OthersProject } from "../lib/supabase";
 import Sidebar from "./Sidebar";
 import OverviewSection from "./OverviewSection";
 import CoilSpringSection from "./CoilSpringSection";
 import StabilizerSection from "./StabilizerSection";
 import ShohinSection from "./ShohinSection";
 import EngineeringSection from "./EngineeringSection";
+import AssemblySection from "./AssemblySection";
+import MachiningSection from "./MachiningSection";
+import OthersSection from "./OthersSection";
 
 
 export default function DashboardClient() {
@@ -21,7 +23,9 @@ export default function DashboardClient() {
   const [engineeringProjects, setEngineeringProjects] = useState<EngineeringProject[]>([]);
   const [loadingReport, setLoadingReport] = useState(true);
   const [sections, setSections] = useState<Section[]>([]);
-  const [customProjects, setCustomProjects] = useState<CustomProject[]>([]);
+  const [assemblyProjects, setAssemblyProjects] = useState<AssemblyProject[]>([]);
+  const [machiningProjects, setMachiningProjects] = useState<MachiningProject[]>([]);
+  const [othersProjects, setOthersProjects] = useState<OthersProject[]>([]);
   const [reportList, setReportList] = useState<Report[]>([]);
 
   useEffect(() => {
@@ -31,12 +35,14 @@ export default function DashboardClient() {
       setReportList(reports);
       const latest = reports[0];
       setSelectedReport(latest);
-      const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
+      const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: asmD }, { data: machD }, { data: othD }] = await Promise.all([
         supabase.from("projects").select("*, action_items(*), milestones(*)").eq("report_id", latest.id).order("project_code"),
         supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", latest.id),
         supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", latest.id),
         supabase.from("sections").select("*").eq("report_id", latest.id).order("sort_order"),
-        supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", latest.id),
+        supabase.from("assembly_projects").select("*, assembly_action_items(*)").eq("report_id", latest.id).order("sort_order"),
+        supabase.from("machining_projects").select("*, machining_action_items(*)").eq("report_id", latest.id).order("sort_order"),
+        supabase.from("others_projects").select("*, others_action_items(*)").eq("report_id", latest.id).order("sort_order"),
       ]);
       // Fetch milestone progress separately and merge
       const projectIds = (proj ?? []).map((p: {id: string}) => p.id);
@@ -58,7 +64,9 @@ export default function DashboardClient() {
       setShohinProjects(shohin ?? []);
       setEngineeringProjects(eng ?? []);
       setSections(sec ?? []);
-      setCustomProjects(cust ?? []);
+      setAssemblyProjects(asmD ?? []);
+      setMachiningProjects(machD ?? []);
+      setOthersProjects(othD ?? []);
       setLoadingReport(false);
     }
     initialLoad();
@@ -67,18 +75,22 @@ export default function DashboardClient() {
   async function refreshCurrentReport() {
     if (!selectedReport) return;
     const reportId = selectedReport?.id ?? '';
-    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
+    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: asmD }, { data: machD }, { data: othD }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*), milestones(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
-      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
+      supabase.from("assembly_projects").select("*, assembly_action_items(*)").eq("report_id", reportId).order("sort_order"),
+      supabase.from("machining_projects").select("*, machining_action_items(*)").eq("report_id", reportId).order("sort_order"),
+      supabase.from("others_projects").select("*, others_action_items(*)").eq("report_id", reportId).order("sort_order"),
     ]);
     if (proj)  setProjects(proj);
     if (shohin) setShohinProjects(shohin);
     if (eng)   setEngineeringProjects(eng);
     if (sec)   setSections(sec);
-    if (cust)  setCustomProjects(cust);
+    if (asmD)  setAssemblyProjects(asmD);
+    if (machD) setMachiningProjects(machD);
+    if (othD)  setOthersProjects(othD);
   }
 
   async function handleReportChange(reportId: string) {
@@ -86,12 +98,14 @@ export default function DashboardClient() {
     if (!report || !selectedReport) return;
     setLoadingReport(true);
     setSelectedReport(report);
-    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
+    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: asmD }, { data: machD }, { data: othD }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*), milestones(*)").eq("report_id", reportId).order("project_code"),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
       supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
-      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
+      supabase.from("assembly_projects").select("*, assembly_action_items(*)").eq("report_id", reportId).order("sort_order"),
+      supabase.from("machining_projects").select("*, machining_action_items(*)").eq("report_id", reportId).order("sort_order"),
+      supabase.from("others_projects").select("*, others_action_items(*)").eq("report_id", reportId).order("sort_order"),
     ]);
     // Merge milestone progress
     const projectIds2 = (proj ?? []).map((p: {id: string}) => p.id);
@@ -110,7 +124,10 @@ export default function DashboardClient() {
     setShohinProjects(shohin ?? []);
     setEngineeringProjects(eng ?? []);
     setSections(sec ?? []);
-    setCustomProjects(cust ?? []);
+    setAssemblyProjects(asmD ?? []);
+    setMachiningProjects(machD ?? []);
+    setOthersProjects(othD ?? []);
+    setSections(sec ?? []);
     setLoadingReport(false);
   }
 
@@ -147,7 +164,7 @@ export default function DashboardClient() {
       </header>
 
       <div className="flex flex-1">
-        <Sidebar activeSection={activeSection} onNavigate={setActiveSection} reportLabel={selectedReport?.period_label ?? ""} reportDate={selectedReport?.report_date ?? ""} sections={sections} />
+        <Sidebar activeSection={activeSection} onNavigate={setActiveSection} reportLabel={selectedReport?.period_label ?? ""} reportDate={selectedReport?.report_date ?? ""} sections={sections} assemblyCount={assemblyProjects.length} machiningCount={machiningProjects.length} othersCount={othersProjects.length} />
         <main className="flex-1 p-6 overflow-auto">
           {loadingReport ? (
             <div className="flex items-center justify-center h-64">
@@ -159,7 +176,7 @@ export default function DashboardClient() {
           ) : (
             <>
               {activeSection === "overview" && (
-                <OverviewSection reportLabel={selectedReport?.period_label ?? ""} projects={projects} shohinProjects={shohinProjects} engineeringProjects={engineeringProjects} customProjects={customProjects} sections={sections} />
+                <OverviewSection reportLabel={selectedReport?.period_label ?? ""} projects={projects} shohinProjects={shohinProjects} engineeringProjects={engineeringProjects} assemblyProjects={assemblyProjects} machiningProjects={machiningProjects} othersProjects={othersProjects} />
               )}
               {activeSection === "coil_spring" && (
                 <CoilSpringSection projects={projects} onRefresh={refreshCurrentReport} />
@@ -170,63 +187,18 @@ export default function DashboardClient() {
               {activeSection === "shohin" && (
                 <ShohinSection shohinProjects={shohinProjects} reportId={selectedReport?.id ?? ''} onRefresh={refreshCurrentReport} />
               )}
-              {sections.map(sec => (
-                activeSection === "section_" + sec.id && (
-                  <CustomSection
-                    key={sec.id}
-                    section={sec}
-                    projects={customProjects.filter(p => p.section_id === sec.id)}
-                    onRefresh={refreshCurrentReport}
-                  />
-                )
-              ))}
+
               {activeSection === "engineering" && (
                 <EngineeringSection projects={engineeringProjects} onRefresh={refreshCurrentReport} />
               )}
               {activeSection === "assembly" && (
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h1 className="text-2xl font-bold text-slate-800">Assembly</h1>
-                      <p className="text-slate-500 text-sm mt-1">Assembly projects and operations</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
-                    <p className="text-4xl mb-3">🔧</p>
-                    <p className="text-slate-500 font-semibold">No Assembly projects yet</p>
-                    <p className="text-slate-400 text-sm mt-1">Projects will appear here once added in Admin</p>
-                  </div>
-                </div>
+                <AssemblySection projects={assemblyProjects} />
               )}
               {activeSection === "machining" && (
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h1 className="text-2xl font-bold text-slate-800">Machining Parts</h1>
-                      <p className="text-slate-500 text-sm mt-1">Machining parts projects and operations</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
-                    <p className="text-4xl mb-3">⚙️</p>
-                    <p className="text-slate-500 font-semibold">No Machining Parts projects yet</p>
-                    <p className="text-slate-400 text-sm mt-1">Projects will appear here once added in Admin</p>
-                  </div>
-                </div>
+                <MachiningSection projects={machiningProjects} />
               )}
               {activeSection === "others" && (
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h1 className="text-2xl font-bold text-slate-800">Others</h1>
-                      <p className="text-slate-500 text-sm mt-1">Other projects and initiatives</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
-                    <p className="text-4xl mb-3">◆</p>
-                    <p className="text-slate-500 font-semibold">No other projects yet</p>
-                    <p className="text-slate-400 text-sm mt-1">Projects will appear here once added in Admin</p>
-                  </div>
-                </div>
+                <OthersSection projects={othersProjects} />
               )}
             </>
           )}

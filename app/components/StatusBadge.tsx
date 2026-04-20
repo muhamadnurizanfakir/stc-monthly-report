@@ -6,6 +6,7 @@ const STATUS_CONFIG: Record<ProjectStatus, { label: string; cls: string }> = {
   completed: { label: 'Completed', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
   delayed:   { label: 'Delayed',   cls: 'bg-red-50 text-red-700 border-red-200' },
   at_risk:   { label: 'At Risk',   cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  on_hold:   { label: 'On Hold',    cls: 'bg-slate-50 text-slate-600 border-slate-200' },
 };
 
 export function StatusBadge({ status }: { status: ProjectStatus }) {

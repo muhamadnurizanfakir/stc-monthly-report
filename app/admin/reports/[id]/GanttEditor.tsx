@@ -36,6 +36,9 @@ interface Props {
   engineeringProjectId?: string;
   reportId?: string;
   customProjectId?: string;
+  assemblyProjectId?: string;
+  machiningProjectId?: string;
+  othersProjectId?: string;
   sectionId?: string;
   projectName: string;
 }
@@ -49,7 +52,7 @@ const BAR_COLORS: Record<string, string> = {
   postponed: "bg-red-100 text-red-800 border border-red-300",
 };
 
-export default function GanttEditor({ projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, sectionId, projectName }: Props) {
+export default function GanttEditor({ projectId, shohinProjectId, engineeringProjectId, reportId, customProjectId, assemblyProjectId, machiningProjectId, othersProjectId, sectionId, projectName }: Props) {
   const [activities, setActivities] = useState<GanttActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -75,6 +78,9 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     else if (engineeringProjectId) query = query.eq("engineering_project_id", engineeringProjectId);
     else if (reportId) query = query.eq("report_id", reportId);
     else if (customProjectId) query = query.eq("custom_project_id", customProjectId);
+    else if (assemblyProjectId) query = query.eq("assembly_project_id", assemblyProjectId);
+    else if (machiningProjectId) query = query.eq("machining_project_id", machiningProjectId);
+    else if (othersProjectId) query = query.eq("others_project_id", othersProjectId);
     else if (sectionId) query = query.eq("section_id", sectionId);
     const { data } = await query;
     setActivities(data ?? []);
@@ -170,6 +176,12 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     else if (engineeringProjectId) payload.engineering_project_id = engineeringProjectId;
     else if (reportId) payload.report_id = reportId;
     else if (customProjectId) payload.custom_project_id = customProjectId;
+    else if (assemblyProjectId) payload.assembly_project_id = assemblyProjectId;
+    else if (machiningProjectId) payload.machining_project_id = machiningProjectId;
+    else if (othersProjectId) payload.others_project_id = othersProjectId;
+    else if (assemblyProjectId) payload.assembly_project_id = assemblyProjectId;
+    else if (machiningProjectId) payload.machining_project_id = machiningProjectId;
+    else if (othersProjectId) payload.others_project_id = othersProjectId;
     else if (sectionId) payload.section_id = sectionId;
     await supabase.from("gantt_activities").insert([payload]);
     fetchActivities();
@@ -198,6 +210,12 @@ export default function GanttEditor({ projectId, shohinProjectId, engineeringPro
     else if (engineeringProjectId) payload.engineering_project_id = engineeringProjectId;
     else if (reportId) payload.report_id = reportId;
     else if (customProjectId) payload.custom_project_id = customProjectId;
+    else if (assemblyProjectId) payload.assembly_project_id = assemblyProjectId;
+    else if (machiningProjectId) payload.machining_project_id = machiningProjectId;
+    else if (othersProjectId) payload.others_project_id = othersProjectId;
+    else if (assemblyProjectId) payload.assembly_project_id = assemblyProjectId;
+    else if (machiningProjectId) payload.machining_project_id = machiningProjectId;
+    else if (othersProjectId) payload.others_project_id = othersProjectId;
     else if (sectionId) payload.section_id = sectionId;
     await supabase.from("gantt_activities").insert([payload]);
     fetchActivities();

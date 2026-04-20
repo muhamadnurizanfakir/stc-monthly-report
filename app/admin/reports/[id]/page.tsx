@@ -47,7 +47,7 @@ export default function ReportDetailPage() {
   const [editingEngId, setEditingEngId] = useState<string | null>(null);
   const [expandedActions, setExpandedActions] = useState<string | null>(null);
   const [expandedGantt, setExpandedGantt] = useState<string | null>(null);
-  const [sections, setSections] = useState<{ id: string; name: string; icon: string; color: string; display_mode: string; sort_order: number }[]>([]);
+  const [sections] = useState<{ id: string; name: string; icon: string; color: string; display_mode: string; sort_order: number }[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeSectionTab, setActiveSectionTab] = useState<string | null>(null);
   const [showCustomProjectForm, setShowCustomProjectForm] = useState(false);
@@ -55,7 +55,9 @@ export default function ReportDetailPage() {
   const [customForm, setCustomForm] = useState({ project_code: '', project_name: '', customer: '', category: '', sop_date: '', completion_pct: '0', status: 'on_track', summary_text: '', auto_progress: true });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
-  const [customProjects, setCustomProjects] = useState<{ id: string; section_id: string; project_code: string | null; project_name: string; customer: string | null; completion_pct: number; status: string; summary_text: string | null; is_visible: boolean; custom_action_items?: {id:string;item_no:number|null;issue_desc:string;action_plan:string|null;completion_pct:number;due_date:string|null;is_info_only:boolean}[] }[]>([]);
+  const [assemblyProjects, setAssemblyProjects] = useState<{id:string;report_id:string;project_code:string|null;project_name:string;category:string|null;customer:string|null;model:string|null;start_date:string|null;sop_date:string|null;volume:number|null;completion_pct:number;auto_progress:boolean;status:string;summary_text:string|null;is_visible:boolean;assembly_action_items?:{id:string;item_no:number|null;item_category:string|null;issue_desc:string;action_plan:string|null;completion_pct:number;due_date:string|null;is_info_only:boolean}[]}[]>([]);
+  const [machiningProjects, setMachiningProjects] = useState<{id:string;report_id:string;project_code:string|null;project_name:string;category:string|null;customer:string|null;model:string|null;start_date:string|null;sop_date:string|null;volume:number|null;completion_pct:number;auto_progress:boolean;status:string;summary_text:string|null;is_visible:boolean;machining_action_items?:{id:string;item_no:number|null;item_category:string|null;issue_desc:string;action_plan:string|null;completion_pct:number;due_date:string|null;is_info_only:boolean}[]}[]>([]);
+  const [othersProjects, setOthersProjects] = useState<{id:string;report_id:string;project_code:string|null;project_name:string;category:string|null;customer:string|null;model:string|null;start_date:string|null;sop_date:string|null;volume:number|null;completion_pct:number;auto_progress:boolean;status:string;summary_text:string|null;is_visible:boolean;others_action_items?:{id:string;item_no:number|null;item_category:string|null;issue_desc:string;action_plan:string|null;completion_pct:number;due_date:string|null;is_info_only:boolean}[]}[]>([]);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -63,12 +65,13 @@ export default function ReportDetailPage() {
     setLoading(true);
     const { data: report } = await supabase.from("reports").select("period_label").eq("id", reportId).single();
     if (report) setReportLabel(report.period_label);
-    const [{ data: proj }, { data: shohin }, { data: eng }, { data: sec }, { data: cust }] = await Promise.all([
+    const [{ data: proj }, { data: shohin }, { data: eng }, { data: asm }, { data: mach }, { data: oth }] = await Promise.all([
       supabase.from("projects").select("*, action_items(*)").eq("report_id", reportId),
       supabase.from("shohin_projects").select("*, shohin_action_items(*)").eq("report_id", reportId),
       supabase.from("engineering_projects").select("*, engineering_action_items(*)").eq("report_id", reportId),
-      supabase.from("sections").select("*").eq("report_id", reportId).order("sort_order"),
-      supabase.from("custom_projects").select("*, custom_action_items(*)").eq("report_id", reportId),
+      supabase.from("assembly_projects").select("*, assembly_action_items(*)").eq("report_id", reportId).order("sort_order"),
+      supabase.from("machining_projects").select("*, machining_action_items(*)").eq("report_id", reportId).order("sort_order"),
+      supabase.from("others_projects").select("*, others_action_items(*)").eq("report_id", reportId).order("sort_order"),
     ]);
     const sorted = (proj ?? []).sort((a, b) => {
       const catDiff = (CAT_ORDER[a.category] ?? 3) - (CAT_ORDER[b.category] ?? 3);
@@ -77,8 +80,9 @@ export default function ReportDetailPage() {
     setProjects(sorted);
     setShohinProjects(shohin ?? []);
     setEngProjects(eng ?? []);
-    setSections(sec ?? []);
-    setCustomProjects(cust ?? []);
+    setAssemblyProjects(asm ?? []);
+    setMachiningProjects(mach ?? []);
+    setOthersProjects(oth ?? []);
     setLoading(false);
   }
 
@@ -358,9 +362,11 @@ export default function ReportDetailPage() {
             <button onClick={async () => {
               if (!customForm.project_name) { alert("Name required"); return; }
               setSaving(true);
-              const payload = { section_id: activeSectionTab, project_code: customForm.project_code || null, project_name: customForm.project_name, customer: customForm.customer || null, category: customForm.category || null, completion_pct: parseInt(customForm.completion_pct), status: customForm.status, summary_text: customForm.summary_text || null, auto_progress: (customForm as {auto_progress?: boolean}).auto_progress ?? true };
-              if (editingCustomId) await supabase.from("custom_projects").update(payload).eq("id", editingCustomId);
-              else await supabase.from("custom_projects").insert([payload]);
+              const tableMap2: Record<string, string> = { assembly: 'assembly_projects', machining: 'machining_projects', others: 'others_projects' };
+              const tbl = tableMap2[activeTab] ?? 'assembly_projects';
+              const payload = { report_id: reportId, project_code: customForm.project_code || null, project_name: customForm.project_name, customer: customForm.customer || null, category: customForm.category || null, completion_pct: parseInt(customForm.completion_pct), status: customForm.status, summary_text: customForm.summary_text || null, auto_progress: (customForm as {auto_progress?: boolean}).auto_progress ?? true };
+              if (editingCustomId) await supabase.from(tbl).update(payload).eq("id", editingCustomId);
+              else await supabase.from(tbl).insert([payload]);
               setSuccessMsg("Project saved!"); setShowCustomProjectForm(false); setEditingCustomId(null); fetchData(); setSaving(false);
             }} disabled={saving} className="px-4 py-2 bg-blue-950 text-white rounded-lg text-sm font-semibold hover:bg-blue-900 disabled:opacity-50">
               {saving ? "Saving..." : editingCustomId ? "Update" : "Add"}
@@ -505,59 +511,76 @@ export default function ReportDetailPage() {
           {(activeTab === "assembly" || activeTab === "machining" || activeTab === "others") && (() => {
             const typeMap: Record<string, string> = { assembly: 'Assembly', machining: 'Machining Parts', others: 'Others' };
             const iconMap: Record<string, string> = { assembly: '🔧', machining: '⚙️', others: '◆' };
-            const sec = sections.find(s => (s as {section_type?:string}).section_type === activeTab);
-            const secProjects = sec ? customProjects.filter(p => p.section_id === sec.id) : [];
+            const tableMap: Record<string, string> = { assembly: 'assembly_projects', machining: 'machining_projects', others: 'others_projects' };
+            const fkMap: Record<string, string> = { assembly: 'assembly_project_id', machining: 'machining_project_id', others: 'others_project_id' };
+            const actionTableMap: Record<string, string> = { assembly: 'assembly_action_items', machining: 'machining_action_items', others: 'others_action_items' };
+            const secProjects = activeTab === 'assembly' ? assemblyProjects : activeTab === 'machining' ? machiningProjects : othersProjects;
+            const actionKey = activeTab === 'assembly' ? 'assembly_action_items' : activeTab === 'machining' ? 'machining_action_items' : 'others_action_items';
             return (
               <div>
                 <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                   <span>{iconMap[activeTab]}</span>{typeMap[activeTab]}
                   <span className="text-xs text-slate-400 font-normal">({secProjects.length} projects)</span>
                 </h2>
-                {!sec ? (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
-                    Section not found. Please re-create this report or contact admin.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {secProjects.length === 0 && (
-                      <div className="bg-slate-50 rounded-xl border border-slate-200 py-8 text-center text-slate-400 text-sm">
-                        No projects yet. Click &quot;+ Add Project&quot; to add one.
-                      </div>
-                    )}
-                    {secProjects.map(p => (
-                      <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-800">{p.project_name}</span>
-                            {p.customer && <span className="text-xs text-slate-500">· {p.customer}</span>}
-                          </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => { setCustomForm({ project_code: p.project_code ?? '', project_name: p.project_name, customer: p.customer ?? '', category: activeTab, sop_date: '', completion_pct: (p.completion_pct ?? 0).toString(), status: p.status, summary_text: p.summary_text ?? '', auto_progress: (p as {auto_progress?: boolean}).auto_progress ?? true }); setEditingCustomId(p.id); setShowCustomProjectForm(true); setActiveSectionTab(sec.id); }}
-                              className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️ Edit</button>
-                            <button onClick={async () => { await supabase.from("custom_projects").update({ is_visible: !p.is_visible }).eq("id", p.id); fetchData(); }}
-                              className={"px-2 py-1 rounded text-xs " + (p.is_visible !== false ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500")}>
-                              {p.is_visible !== false ? "● Visible" : "○ Hidden"}
-                            </button>
-                            <button onClick={async () => { if (!confirm("Delete?")) return; await supabase.from("custom_projects").delete().eq("id", p.id); fetchData(); }}
-                              className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
-                          </div>
+                <div className="space-y-3">
+                  {secProjects.length === 0 && (
+                    <div className="bg-slate-50 rounded-xl border border-slate-200 py-8 text-center text-slate-400 text-sm">
+                      No projects yet. Click &quot;+ Add Project&quot; to add one.
+                    </div>
+                  )}
+                  {secProjects.map(p => (
+                    <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {p.project_code && <span className="text-xs font-mono text-slate-400">{p.project_code}</span>}
+                          <span className="font-bold text-slate-800">{p.project_name}</span>
+                          {p.customer && <span className="text-xs text-slate-500">· {p.customer}</span>}
+                          {p.model && <span className="text-xs text-slate-400">· {p.model}</span>}
+                          <span className="text-xs text-blue-600">{p.auto_progress ? '🤖 Auto' : `✏️ ${p.completion_pct}%`}</span>
                         </div>
-                        {expandedActions === p.id && <ActionItemsPanel projectId={p.id} items={p.custom_action_items ?? []} table="custom_action_items" fkField="custom_project_id" onRefresh={fetchData} />}
-                        {expandedGantt === p.id && <div className="border-t border-slate-100 p-4 bg-purple-50 mt-2"><GanttEditor customProjectId={p.id} projectName={p.project_name} /></div>}
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => setExpandedActions(expandedActions === p.id ? null : p.id)}
-                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">
-                            {expandedActions === p.id ? "▲ Hide" : "▼ Actions"} ({(p.custom_action_items ?? []).length})
+                        <div className="flex gap-2">
+                          <button onClick={() => { setCustomForm({ project_code: p.project_code ?? '', project_name: p.project_name, customer: p.customer ?? '', category: p.category ?? activeTab, sop_date: p.sop_date ?? '', completion_pct: (p.completion_pct ?? 0).toString(), status: p.status, summary_text: p.summary_text ?? '', auto_progress: p.auto_progress ?? true }); setEditingCustomId(p.id); setShowCustomProjectForm(true); }}
+                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️ Edit</button>
+                          <button onClick={async () => { await supabase.from(tableMap[activeTab]).update({ is_visible: !p.is_visible }).eq("id", p.id); fetchData(); }}
+                            className={"px-2 py-1 rounded text-xs " + (p.is_visible !== false ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500")}>
+                            {p.is_visible !== false ? "● Visible" : "○ Hidden"}
                           </button>
-                          <button onClick={() => setExpandedGantt(expandedGantt === p.id ? null : p.id)}
-                            className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs hover:bg-purple-100">
-                            {expandedGantt === p.id ? "▲ Hide Gantt" : "📊 Gantt"}
-                          </button>
+                          <button onClick={async () => { if (!confirm("Delete?")) return; await supabase.from(tableMap[activeTab]).delete().eq("id", p.id); fetchData(); }}
+                            className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      {expandedActions === p.id && (
+                        <ActionItemsPanel 
+                          projectId={p.id} 
+                          items={(p as Record<string, unknown>)[actionKey] as ActionItemRow[] ?? []} 
+                          table={actionTableMap[activeTab]} 
+                          fkField={fkMap[activeTab]} 
+                          onRefresh={fetchData} 
+                        />
+                      )}
+                      {expandedGantt === p.id && (
+                        <div className="border-t border-slate-100 p-4 bg-purple-50 mt-2">
+                          <GanttEditor 
+                            assemblyProjectId={activeTab === 'assembly' ? p.id : undefined}
+                            machiningProjectId={activeTab === 'machining' ? p.id : undefined}
+                            othersProjectId={activeTab === 'others' ? p.id : undefined}
+                            projectName={p.project_name} 
+                          />
+                        </div>
+                      )}
+                      <div className="flex gap-2 mt-2">
+                        <button onClick={() => setExpandedActions(expandedActions === p.id ? null : p.id)}
+                          className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">
+                          {expandedActions === p.id ? "▲ Hide" : "▼ Actions"} ({((p as Record<string, unknown>)[actionKey] as unknown[])?.length ?? 0})
+                        </button>
+                        <button onClick={() => setExpandedGantt(expandedGantt === p.id ? null : p.id)}
+                          className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs hover:bg-purple-100">
+                          {expandedGantt === p.id ? "▲ Hide Gantt" : "📊 Gantt"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })()}

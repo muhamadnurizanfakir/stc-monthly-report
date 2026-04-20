@@ -2,15 +2,16 @@
 
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import type { Project, ShohinProject, EngineeringProject, CustomProject, Section } from '../lib/supabase';
+import type { Project, ShohinProject, EngineeringProject, AssemblyProject, MachiningProject, OthersProject } from '../lib/supabase';
 import { StatusBadge, ProgressBar } from './StatusBadge';
 
 interface OverviewProps {
   projects:            Project[];
   shohinProjects:      ShohinProject[];
   engineeringProjects: EngineeringProject[];
-  customProjects:      CustomProject[];
-  sections:            Section[];
+  assemblyProjects:    AssemblyProject[];
+  machiningProjects:   MachiningProject[];
+  othersProjects:      OthersProject[];
   reportLabel:         string;
 }
 
@@ -46,13 +47,15 @@ const CAT_LABELS: Record<string, string> = {
   engineering:     'Engineering',
 };
 
-export default function OverviewSection({ projects, shohinProjects, engineeringProjects, customProjects, sections, reportLabel }: OverviewProps) {
+export default function OverviewSection({ projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects, reportLabel }: OverviewProps) {
   const stats = useMemo(() => {
     const allVisible = [
       ...projects.filter(p => p.is_visible !== false),
       ...shohinProjects.filter(p => p.is_visible !== false).map(p => ({ ...p, project_code: '', category: p.category ?? 'Material Change' })),
       ...engineeringProjects.filter(p => p.is_visible !== false).map(p => ({ ...p, project_code: '', category: p.category ?? 'Engineering' })),
-      ...customProjects.filter(p => p.is_visible !== false).map(p => { const sec = sections.find(s => s.id === p.section_id); return { ...p, project_code: p.project_code ?? '', category: p.category ?? sec?.name ?? 'Other' }; }),
+      ...assemblyProjects.filter(p => p.is_visible !== false).map(p => ({ ...p, project_code: p.project_code ?? '', category: 'Assembly' })),
+      ...machiningProjects.filter(p => p.is_visible !== false).map(p => ({ ...p, project_code: p.project_code ?? '', category: 'Machining Parts' })),
+      ...othersProjects.filter(p => p.is_visible !== false).map(p => ({ ...p, project_code: p.project_code ?? '', category: 'Others' })),
     ];
     const total     = allVisible.length;
     const onTrack   = allVisible.filter(p => p.status === 'on_track').length;
@@ -97,7 +100,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
       return a.cat.localeCompare(b.cat);
     });
     return { total, onTrack, completed, delayed, avgPct, statusDist, byCategory, allVisible, categoryProgress };
-  }, [projects, shohinProjects, engineeringProjects, customProjects, sections]);
+  }, [projects, shohinProjects, engineeringProjects, assemblyProjects, machiningProjects, othersProjects]);
 
   const kpis = [
     { label: 'Total Projects',   value: stats.total,        sub: 'active this period',   color: '#1e3a8a' },
@@ -245,7 +248,7 @@ export default function OverviewSection({ projects, shohinProjects, engineeringP
                   <td className="py-2 px-4 w-36">
                     <ProgressBar pct={p.completion_pct ?? 0} />
                   </td>
-                  <td className="py-2 px-4"><StatusBadge status={p.status} /></td>
+                  <td className="py-2 px-4"><StatusBadge status={p.status as import("../lib/supabase").ProjectStatus} /></td>
                 </tr>
               )})}
             </tbody>

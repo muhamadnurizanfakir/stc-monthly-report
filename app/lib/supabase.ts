@@ -6,7 +6,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type ProductCategory = 'coil_spring' | 'stabilizer_bar' | 'engineering';
-export type ProjectStatus   = 'on_track' | 'delayed' | 'at_risk' | 'completed';
+export type ProjectStatus   = 'on_track' | 'delayed' | 'at_risk' | 'completed' | 'on_hold';
 
 export interface Report {
   id:           string;
@@ -228,3 +228,95 @@ export async function getCustomProjectsByReport(reportId: string): Promise<Custo
   if (error) { console.error(error); return []; }
   return data ?? [];
 }
+
+export interface AssemblyProject {
+  id: string;
+  report_id: string;
+  project_code: string | null;
+  project_name: string;
+  category: string | null;
+  customer: string | null;
+  model: string | null;
+  start_date: string | null;
+  sop_date: string | null;
+  volume: number | null;
+  completion_pct: number;
+  auto_progress: boolean;
+  status: string;
+  summary_text: string | null;
+  is_visible: boolean;
+  assembly_action_items?: ActionItem[];
+  project_milestone_progress?: { milestone_progress: number | null; total_milestones: number; achieved_milestones: number; total_bars: number; done_bars: number }[];
+}
+
+export interface MachiningProject {
+  id: string;
+  report_id: string;
+  project_code: string | null;
+  project_name: string;
+  category: string | null;
+  customer: string | null;
+  model: string | null;
+  start_date: string | null;
+  sop_date: string | null;
+  volume: number | null;
+  completion_pct: number;
+  auto_progress: boolean;
+  status: string;
+  summary_text: string | null;
+  is_visible: boolean;
+  machining_action_items?: ActionItem[];
+  project_milestone_progress?: { milestone_progress: number | null; total_milestones: number; achieved_milestones: number; total_bars: number; done_bars: number }[];
+}
+
+export interface OthersProject {
+  id: string;
+  report_id: string;
+  project_code: string | null;
+  project_name: string;
+  category: string | null;
+  customer: string | null;
+  model: string | null;
+  start_date: string | null;
+  sop_date: string | null;
+  volume: number | null;
+  completion_pct: number;
+  auto_progress: boolean;
+  status: string;
+  summary_text: string | null;
+  is_visible: boolean;
+  others_action_items?: ActionItem[];
+  project_milestone_progress?: { milestone_progress: number | null; total_milestones: number; achieved_milestones: number; total_bars: number; done_bars: number }[];
+}
+
+
+export async function getAssemblyByReport(reportId: string): Promise<AssemblyProject[]> {
+  const { data, error } = await supabase
+    .from('assembly_projects')
+    .select('*, assembly_action_items(*)')
+    .eq('report_id', reportId)
+    .order('sort_order');
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
+export async function getMachiningByReport(reportId: string): Promise<MachiningProject[]> {
+  const { data, error } = await supabase
+    .from('machining_projects')
+    .select('*, machining_action_items(*)')
+    .eq('report_id', reportId)
+    .order('sort_order');
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
+export async function getOthersByReport(reportId: string): Promise<OthersProject[]> {
+  const { data, error } = await supabase
+    .from('others_projects')
+    .select('*, others_action_items(*)')
+    .eq('report_id', reportId)
+    .order('sort_order');
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+

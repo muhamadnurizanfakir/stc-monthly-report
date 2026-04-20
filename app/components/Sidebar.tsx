@@ -8,9 +8,12 @@ interface SidebarProps {
   onNavigate: (id: string) => void;
   reportLabel: string;
   reportDate: string;
+  assemblyCount?: number;
+  machiningCount?: number;
+  othersCount?: number;
 }
 
-export default function Sidebar({ activeSection, onNavigate, reportLabel, reportDate, sections = [] }: SidebarProps) {
+export default function Sidebar({ activeSection, onNavigate, reportLabel, reportDate, sections = [], assemblyCount = 0, machiningCount = 0, othersCount = 0 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [prodExpanded, setProdExpanded] = useState(true);
 
@@ -19,9 +22,6 @@ export default function Sidebar({ activeSection, onNavigate, reportLabel, report
     !['assembly','machining','others'].includes(s.section_type ?? '')
   );
   // Fixed sections
-  const assemblySection = sections.find(s => s.section_type === 'assembly');
-  const machiningSection = sections.find(s => s.section_type === 'machining');
-  const othersSection = sections.find(s => s.section_type === 'others');
 
   const isActive = (id: string) => activeSection === id;
 
@@ -112,13 +112,13 @@ export default function Sidebar({ activeSection, onNavigate, reportLabel, report
         <NavBtn id="shohin" icon="◉" label="Process Improvement" />
 
         {/* Assembly */}
-        {assemblySection && <NavBtn id={'section_' + assemblySection.id} icon="🔧" label="Assembly" />}
+        <NavBtn id="assembly" icon="🔧" label={`Assembly${assemblyCount > 0 ? ` (${assemblyCount})` : ''}`} />
 
         {/* Machining Parts */}
-        {machiningSection && <NavBtn id={'section_' + machiningSection.id} icon="⚙️" label="Machining Parts" />}
+        <NavBtn id="machining" icon="⚙️" label={`Machining${machiningCount > 0 ? ` (${machiningCount})` : ''}`} />
 
         {/* Others */}
-        {othersSection && <NavBtn id={'section_' + othersSection.id} icon="◆" label="Others" />}
+        <NavBtn id="others" icon="◆" label={`Others${othersCount > 0 ? ` (${othersCount})` : ''}`} />
 
       </nav>
 
