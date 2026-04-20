@@ -1,8 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProgressBar } from './StatusBadge';
 import GanttChart from './GanttChart';
 import type { AssemblyProject } from '../lib/supabase';
+import { fetchMilestoneProgress, calcProgress } from '../lib/progressUtils';
+import type { MilestoneProgress } from '../lib/progressUtils';
 
 interface Props {
   projects: AssemblyProject[];
@@ -18,6 +20,15 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export default function AssemblySection({ projects }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [milestoneMap, setMilestoneMap] = useState<Record<string, MilestoneProgress>>({}); 
+
+  useEffect(() => {
+    const ids = projects.map(p => p.id);
+    if (ids.length > 0) {
+      fetchMilestoneProgress(ids).then(setMilestoneMap);
+    }
+  }, [projects]);
+
   const visible = projects.filter(p => p.is_visible !== false);
 
   return (
@@ -36,13 +47,12 @@ export default function AssemblySection({ projects }: Props) {
       ) : (
         <div className="space-y-4">
           {visible.map(project => {
-            const autoProgress = project.auto_progress !== false;
-            const pct = project.completion_pct ?? 0;
+            const { pct, label } = calcProgress(project.id, project.completion_pct, project.auto_progress !== false, milestoneMap);
             const style = STATUS_COLORS[project.status] ?? STATUS_COLORS.on_track;
             const actionItems = [...(project.assembly_action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
             const isExpanded = expanded === project.id;
             return (
-              <div key={project.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div key={project.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-4">
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -62,27 +72,22 @@ export default function AssemblySection({ projects }: Props) {
                       </div>
                     </div>
                     <div className="text-right ml-4 shrink-0">
-                      <p className="text-xs font-bold text-slate-700">{autoProgress ? `Auto: ${pct}%` : `Manual: ${pct}%`}</p>
+                      <p className="text-xs font-bold text-slate-700">{label}</p>
                     </div>
                   </div>
                   <ProgressBar pct={pct} />
-                  {project.summary_text && (
-                    <p className="text-xs text-slate-500 mt-3 leading-relaxed">{project.summary_text}</p>
-                  )}
+                  {project.summary_text && <p className="text-xs text-slate-500 mt-3 leading-relaxed">{project.summary_text}</p>}
                   <button onClick={() => setExpanded(isExpanded ? null : project.id)}
                     className="mt-3 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors">
                     {isExpanded ? '▲ Hide Details' : '▼ Show Gantt & Action Items'}
                   </button>
                 </div>
-
                 {isExpanded && (
                   <div>
-                    {/* Gantt Chart */}
                     <div className="p-4 bg-slate-50 border-t border-slate-200">
                       <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Gantt Chart</p>
                       <GanttChart assemblyProjectId={project.id} />
                     </div>
-                    {/* Action Items */}
                     {actionItems.length > 0 && (
                       <div>
                         <div className="px-4 py-2 bg-blue-950 border-t border-blue-900">

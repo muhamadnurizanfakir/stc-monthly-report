@@ -1,7 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ProgressBar } from './StatusBadge';
+import { fetchMilestoneProgress, calcProgress } from '../lib/progressUtils';
+import type { MilestoneProgress } from '../lib/progressUtils';
 import GanttChart from './GanttChart';
 import type { EngineeringProject } from '../lib/supabase';
 
@@ -21,6 +23,12 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 export default function EngineeringSection({ projects, onRefresh }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showHidden, setShowHidden] = useState(false);
+  const [milestoneMap, setMilestoneMap] = useState<Record<string, MilestoneProgress>>({});
+
+  useEffect(() => {
+    const ids = projects.map(p => p.id);
+    if (ids.length > 0) fetchMilestoneProgress(ids).then(setMilestoneMap);
+  }, [projects]);
 
   const visible = projects.filter(p => p.is_visible !== false);
   const hidden = projects.filter(p => p.is_visible === false);
@@ -54,8 +62,7 @@ export default function EngineeringSection({ projects, onRefresh }: Props) {
       ) : (
         <div className="space-y-4">
           {display.map(project => {
-            const autoProgress = project.auto_progress !== false;
-            const pct = project.completion_pct ?? 0;
+            const { pct, label: progressLabel } = calcProgress(project.id, project.completion_pct, project.auto_progress !== false, milestoneMap);
             const style = STATUS_COLORS[project.status] ?? STATUS_COLORS.on_track;
             const actionItems = [...(project.engineering_action_items ?? [])].sort((a, b) => (a.item_no ?? 0) - (b.item_no ?? 0));
             const isExpanded = expanded === project.id;
@@ -80,7 +87,7 @@ export default function EngineeringSection({ projects, onRefresh }: Props) {
                       </div>
                     </div>
                     <div className="text-right ml-4 shrink-0">
-                      <p className="text-xs font-bold text-slate-700">{autoProgress ? `Auto: ${pct}%` : `Manual: ${pct}%`}</p>
+                      <p className="text-xs font-bold text-slate-700">{progressLabel}</p>
                     </div>
                   </div>
                   <ProgressBar pct={pct} />
