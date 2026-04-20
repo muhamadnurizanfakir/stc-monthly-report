@@ -69,9 +69,13 @@ export interface ShohinProject {
   project_code:   string | null;
   project_name:   string;
   customer:       string | null;
+  model:          string | null;
   sop_date:       string | null;
+  start_date:     string | null;
+  volume:         number | null;
   category:       string | null;
   completion_pct: number | null;
+  auto_progress:  boolean;
   status:         ProjectStatus;
   summary_text:   string | null;
   is_visible:     boolean;

@@ -1,6 +1,8 @@
 'use client';
-import type { MachiningProject } from '../lib/supabase';
+import { useState } from 'react';
 import { ProgressBar } from './StatusBadge';
+import GanttEditor from '../admin/reports/[id]/GanttEditor';
+import type { MachiningProject } from '../lib/supabase';
 
 interface Props {
   projects: MachiningProject[];
@@ -15,8 +17,10 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export default function MachiningSection({ projects }: Props) {
+  const [expandedGantt, setExpandedGantt] = useState<string | null>(null);
+  const [expandedActions, setExpandedActions] = useState<string | null>(null);
+
   const visible = projects.filter(p => p.is_visible !== false);
-  const hidden = projects.filter(p => p.is_visible === false);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -37,24 +41,26 @@ export default function MachiningSection({ projects }: Props) {
         <div className="space-y-4">
           {visible.map(project => {
             const autoProgress = project.auto_progress !== false;
-            const pct = autoProgress ? (project.completion_pct ?? 0) : (project.completion_pct ?? 0);
+            const pct = project.completion_pct ?? 0;
             const style = STATUS_COLORS[project.status] ?? STATUS_COLORS.on_track;
+            const actionItems = (project.machining_action_items ?? []);
             return (
               <div key={project.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
                         {project.project_code && <span className="text-xs font-mono text-slate-400">{project.project_code}</span>}
                         <h3 className="font-bold text-slate-800">{project.project_name}</h3>
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: style.bg, color: style.text }}>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
+                          style={{ background: style.bg, color: style.text }}>
                           {project.status.replace('_',' ')}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                         {project.customer && <span>👤 {project.customer}</span>}
                         {project.model && <span>🚗 {project.model}</span>}
-                        {project.sop_date && <span>📅 SOP: {new Date(project.sop_date).toLocaleDateString('en-MY', {month:'short',year:'numeric'})}</span>}
+                        {project.sop_date && <span>📅 SOP: {new Date(project.sop_date).toLocaleDateString('en-MY', { month:'short', year:'numeric' })}</span>}
                         {project.volume && <span>📦 {project.volume.toLocaleString()} units</span>}
                       </div>
                     </div>
@@ -68,34 +74,47 @@ export default function MachiningSection({ projects }: Props) {
                   {project.summary_text && (
                     <p className="text-xs text-slate-500 mt-3 leading-relaxed">{project.summary_text}</p>
                   )}
-                  {(project.machining_action_items ?? []).length > 0 && (
+
+                  {actionItems.length > 0 && expandedActions === project.id && (
                     <div className="mt-4 border-t border-slate-100 pt-3">
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Action Items</p>
                       <div className="space-y-2">
-                        {(project.machining_action_items ?? []).map(item => (
+                        {actionItems.map(item => (
                           <div key={item.id} className="flex items-start gap-2 text-xs">
-                            <span className="shrink-0 mt-0.5 {item.is_info_only ? 'text-blue-500' : item.completion_pct === 100 ? 'text-green-500' : 'text-orange-500'}">
+                            <span className={"shrink-0 mt-0.5 " + (item.is_info_only ? 'text-blue-500' : item.completion_pct === 100 ? 'text-green-500' : 'text-orange-500')}>
                               {item.is_info_only ? 'ℹ' : item.completion_pct === 100 ? '✓' : '→'}
                             </span>
                             <div className="flex-1">
                               <p className="text-slate-700">{item.issue_desc}</p>
                               {item.action_plan && <p className="text-slate-400 mt-0.5">{item.action_plan}</p>}
                             </div>
-                            {!item.is_info_only && (
-                              <span className="shrink-0 text-slate-400">{item.completion_pct}%</span>
-                            )}
+                            {!item.is_info_only && <span className="shrink-0 text-slate-400">{item.completion_pct}%</span>}
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {expandedGantt === project.id && (
+                    <div className="mt-4 border-t border-slate-100 pt-3">
+                      <GanttEditor machiningProjectId={project.id} projectName={project.project_name} />
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                    <button onClick={() => setExpandedActions(expandedActions === project.id ? null : project.id)}
+                      className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs hover:bg-blue-100">
+                      {expandedActions === project.id ? '▲ Hide' : '▼ Actions'} ({actionItems.length})
+                    </button>
+                    <button onClick={() => setExpandedGantt(expandedGantt === project.id ? null : project.id)}
+                      className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs hover:bg-purple-100">
+                      {expandedGantt === project.id ? '▲ Hide Gantt' : '📊 Gantt'}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
-          {hidden.length > 0 && (
-            <p className="text-xs text-slate-400 text-center">+ {hidden.length} hidden project(s)</p>
-          )}
         </div>
       )}
     </div>
