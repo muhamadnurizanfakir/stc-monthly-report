@@ -21,7 +21,7 @@ export default function OthersSection({ projects }: Props) {
   const visible = projects.filter(p => p.is_visible !== false);
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">◆ Others</h1>
         <p className="text-slate-500 text-sm mt-1">{visible.length} project(s) tracked</p>
