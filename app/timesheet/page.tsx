@@ -122,9 +122,7 @@ export default function TimesheetDashboard() {
     setAllUsers(usrData ?? []);
     setSessions(ses ?? []);
     // Auto clock-out sessions that are still active from previous days
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = new Date(Date.now() - 86400000).toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
     const oldActiveSessions = (activeSes ?? []).filter(s => s.date <= yesterdayStr);
     for (const s of oldActiveSessions) {
       // Clock out at 23:59 on the session date
@@ -143,7 +141,7 @@ export default function TimesheetDashboard() {
     setLoading(false);
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
   // activeSessions comes from state now - always current regardless of month filter
 
   const factoryStats = useMemo(() => factories.map((fac, idx) => {

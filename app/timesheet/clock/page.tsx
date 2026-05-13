@@ -39,6 +39,7 @@ export default function ClockPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
+    // Use MYT for date comparisons
     return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   });
 
