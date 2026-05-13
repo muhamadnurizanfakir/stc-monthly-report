@@ -226,6 +226,24 @@ export default function TimesheetDashboard() {
                 </div>
               ))
             }
+            <div className="mt-4 border-t border-blue-900 pt-3">
+              <p className="text-xs text-blue-500 mb-2">All Staff — {selectedMonth}</p>
+              {allUsers.map(u => {
+                const count = sessions.filter(s => (s.ts_users as {name:string}|undefined)?.name === u.name).length;
+                const isActive = activeSessions.some(s => (s.ts_users as {name:string}|undefined)?.name === u.name);
+                return (
+                  <button key={u.id}
+                    onClick={() => setFilterUser(filterUser === u.name ? '' : u.name)}
+                    className={"w-full flex items-center gap-1.5 mb-1 px-1 py-0.5 rounded hover:bg-blue-800/40 transition-colors text-left " + (filterUser === u.name ? 'bg-blue-800/60' : '')}>
+                    <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (isActive ? 'bg-green-400 animate-pulse' : count > 0 ? 'bg-blue-400' : 'bg-slate-600')}></span>
+                    <span className="text-xs text-blue-200 truncate flex-1">{u.name}</span>
+                    <span className={"text-xs font-bold shrink-0 " + (count > 0 ? 'text-orange-400' : 'text-slate-500')}>
+                      [{count}]
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
