@@ -34,7 +34,7 @@ export default function TimesheetDashboard() {
   const [deleteModal, setDeleteModal] = useState<Session | null>(null);
   const [modalPassword, setModalPassword] = useState('');
   const [modalError, setModalError] = useState('');
-  const [editForm, setEditForm] = useState({ clock_in: '', clock_out: '', factory_code: '', notes: '' });
+  const [editForm, setEditForm] = useState({ date: '', clock_in: '', clock_out: '', factory_code: '', notes: '' });
   const [modalSaving, setModalSaving] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -65,7 +65,7 @@ export default function TimesheetDashboard() {
     setModalSaving(true);
     const ok = await verifyPassword();
     if (!ok) { setModalError('Wrong password.'); setModalSaving(false); return; }
-    const date = editModal!.date;
+    const date = editForm.date || editModal!.date;
     const clockIn = new Date(date + 'T' + editForm.clock_in + ':00+08:00').toISOString();
     const clockOut = editForm.clock_out ? new Date(date + 'T' + editForm.clock_out + ':00+08:00').toISOString() : null;
     const hrs = clockOut ? parseFloat(((new Date(clockOut).getTime() - new Date(clockIn).getTime()) / 3600000).toFixed(2)) : null;
@@ -121,7 +121,25 @@ export default function TimesheetDashboard() {
     setFactories(fac ?? []);
     setAllUsers(usrData ?? []);
     setSessions(ses ?? []);
-    setActiveSessions(activeSes ?? []);
+    // Auto clock-out sessions that are still active from previous days
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const oldActiveSessions = (activeSes ?? []).filter(s => s.date <= yesterdayStr);
+    for (const s of oldActiveSessions) {
+      // Clock out at 23:59 on the session date
+      const autoClockOut = new Date(s.date + 'T23:59:00+08:00').toISOString();
+      const hrs = parseFloat(((new Date(autoClockOut).getTime() - new Date(s.clock_in).getTime()) / 3600000).toFixed(2));
+      await supabase.from('ts_sessions').update({
+        clock_out: autoClockOut,
+        hours_worked: Math.min(hrs, 12), // cap at 12 hours
+        notes: (s.notes ? s.notes + ' | ' : '') + 'Auto clock-out 23:59',
+      }).eq('id', s.id);
+    }
+    // Refetch active sessions after auto clock-out
+    const { data: freshActive } = await supabase.from('ts_sessions').select('*, ts_users(name, employee_id)').is('clock_out', null);
+    setActiveSessions(freshActive ?? []);
+    setLoading(false);
     setLoading(false);
   }
 
@@ -449,7 +467,7 @@ export default function TimesheetDashboard() {
                               <td className="py-2 px-4 text-slate-500 max-w-[150px] truncate">{s.notes ?? '—'}</td>
                               <td className="py-2 px-4">
                                 <div className="flex gap-1">
-                                  <button onClick={() => { setEditModal(s); setEditForm({ clock_in: new Date(s.clock_in).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false }), clock_out: s.clock_out ? new Date(s.clock_out).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false }) : '', factory_code: s.factory_code, notes: s.notes ?? '' }); setModalPassword(''); setModalError(''); }}
+                                  <button onClick={() => { setEditModal(s); setEditForm({ date: s.date, clock_in: new Date(s.clock_in).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false }), clock_out: s.clock_out ? new Date(s.clock_out).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false }) : '', factory_code: s.factory_code, notes: s.notes ?? '' }); setModalPassword(''); setModalError(''); }}
                                     className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️</button>
                                   <button onClick={() => { setDeleteModal(s); setModalPassword(''); setModalError(''); }}
                                     className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
@@ -499,6 +517,11 @@ export default function TimesheetDashboard() {
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Clock In</label>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+                  <input type="date" value={editForm.date} onChange={e => setEditForm({ ...editForm, date: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
                 <input type="time" value={editForm.clock_in} onChange={e => setEditForm({ ...editForm, clock_in: e.target.value })}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
