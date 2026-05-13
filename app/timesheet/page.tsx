@@ -41,6 +41,7 @@ export default function TimesheetDashboard() {
     return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   });
   const [filterUser, setFilterUser] = useState('');
+  const [allUsers, setAllUsers] = useState<{id: string; name: string}[]>([]);
 
   useEffect(() => { fetchData(); }, [selectedMonth]);
 
@@ -107,8 +108,9 @@ export default function TimesheetDashboard() {
   async function fetchData() {
     setLoading(true);
     const lastDay = (() => { const [y,m] = selectedMonth.split('-'); return new Date(parseInt(y), parseInt(m), 0).toISOString().split('T')[0]; })();
-    const [{ data: fac }, { data: ses }, { data: activeSes }] = await Promise.all([
+    const [{ data: fac }, { data: usrData }, { data: ses }, { data: activeSes }] = await Promise.all([
       supabase.from('ts_factories').select('*').eq('is_active', true).order('sort_order'),
+      supabase.from('ts_users').select('id, name').eq('is_active', true).order('name'),
       supabase.from('ts_sessions').select('*, ts_users(name, employee_id, designation, hourly_rate)')
         .gte('date', selectedMonth + '-01')
         .lte('date', lastDay)
@@ -117,6 +119,7 @@ export default function TimesheetDashboard() {
         .is('clock_out', null),
     ]);
     setFactories(fac ?? []);
+    setAllUsers(usrData ?? []);
     setSessions(ses ?? []);
     setActiveSessions(activeSes ?? []);
     setLoading(false);
@@ -140,10 +143,6 @@ export default function TimesheetDashboard() {
   const totalMonthH = factoryStats.reduce((a, f) => a + f.monthH, 0);
 
   // Session history filtered
-  const allUsers = useMemo(() => {
-    const names = new Set(sessions.map(s => (s.ts_users as {name:string}|undefined)?.name ?? ''));
-    return Array.from(names).filter(Boolean).sort();
-  }, [sessions]);
 
   const filteredSessions = useMemo(() => {
     if (!filterUser) return sessions;
@@ -394,7 +393,7 @@ export default function TimesheetDashboard() {
                   <select value={filterUser} onChange={e => setFilterUser(e.target.value)}
                     className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">All Employees</option>
-                    {allUsers.map(u => <option key={u} value={u}>{u}</option>)}
+                    {allUsers.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                   </select>
                   {filterUser && <button onClick={() => setFilterUser('')} className="text-xs text-slate-400 hover:text-slate-600">Clear</button>}
                 </div>

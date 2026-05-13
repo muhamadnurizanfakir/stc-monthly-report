@@ -64,6 +64,85 @@ export default function AdminPage() {
     setSaving(false);
   }
 
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async function takeSnapshot(sourceReportId: string, periodLabel: string) {
+    // Fetch all live data for this report
+    const [
+      { data: projects },
+      { data: shohin },
+      { data: engineering },
+      { data: assembly },
+      { data: machining },
+      { data: others },
+      { data: ganttActivities },
+      { data: ganttBars },
+      { data: ganttMilestones },
+    ] = await Promise.all([
+      supabase.from('projects').select('*').eq('report_id', sourceReportId),
+      supabase.from('shohin_projects').select('*').eq('report_id', sourceReportId),
+      supabase.from('engineering_projects').select('*').eq('report_id', sourceReportId),
+      supabase.from('assembly_projects').select('*').eq('report_id', sourceReportId),
+      supabase.from('machining_projects').select('*').eq('report_id', sourceReportId),
+      supabase.from('others_projects').select('*').eq('report_id', sourceReportId),
+      supabase.from('gantt_activities').select('*'),
+      supabase.from('gantt_bars').select('*'),
+      supabase.from('gantt_milestones').select('*'),
+    ]);
+
+    // Get project IDs for action items
+    const projectIds = (projects ?? []).map((p: {id: string}) => p.id);
+    const shohinIds = (shohin ?? []).map((p: {id: string}) => p.id);
+    const engIds = (engineering ?? []).map((p: {id: string}) => p.id);
+    const asmIds = (assembly ?? []).map((p: {id: string}) => p.id);
+    const machIds = (machining ?? []).map((p: {id: string}) => p.id);
+    const othIds = (others ?? []).map((p: {id: string}) => p.id);
+
+    const [
+      { data: actionItems },
+      { data: shohinActions },
+      { data: engActions },
+      { data: asmActions },
+      { data: machActions },
+      { data: othActions },
+    ] = await Promise.all([
+      projectIds.length > 0 ? supabase.from('action_items').select('*').in('project_id', projectIds) : Promise.resolve({ data: [] }),
+      shohinIds.length > 0 ? supabase.from('shohin_action_items').select('*').in('shohin_id', shohinIds) : Promise.resolve({ data: [] }),
+      engIds.length > 0 ? supabase.from('engineering_action_items').select('*').in('eng_project_id', engIds) : Promise.resolve({ data: [] }),
+      asmIds.length > 0 ? supabase.from('assembly_action_items').select('*').in('assembly_project_id', asmIds) : Promise.resolve({ data: [] }),
+      machIds.length > 0 ? supabase.from('machining_action_items').select('*').in('machining_project_id', machIds) : Promise.resolve({ data: [] }),
+      othIds.length > 0 ? supabase.from('others_action_items').select('*').in('others_project_id', othIds) : Promise.resolve({ data: [] }),
+    ]);
+
+    const snapshotData = {
+      snapshot_version: '1.0',
+      projects: projects ?? [],
+      shohin_projects: shohin ?? [],
+      engineering_projects: engineering ?? [],
+      assembly_projects: assembly ?? [],
+      machining_projects: machining ?? [],
+      others_projects: others ?? [],
+      action_items: actionItems ?? [],
+      shohin_action_items: shohinActions ?? [],
+      engineering_action_items: engActions ?? [],
+      assembly_action_items: asmActions ?? [],
+      machining_action_items: machActions ?? [],
+      others_action_items: othActions ?? [],
+      gantt_activities: ganttActivities ?? [],
+      gantt_bars: ganttBars ?? [],
+      gantt_milestones: ganttMilestones ?? [],
+    };
+
+    await supabase.from('report_snapshots').insert([{
+      report_id: sourceReportId,
+      period_label: periodLabel,
+      snapshot_data: snapshotData,
+      created_by: 'admin',
+    }]);
+
+    console.log('Snapshot taken for:', periodLabel);
+  }
+
   async function copyPreviousReport(sourceId: string, destId: string) {
     // Copy main projects
     const { data: projects } = await supabase
