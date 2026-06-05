@@ -122,6 +122,12 @@ export default function AdminTimesheet() {
                       placeholder="e.g. STC001" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Short Name</label>
+                    <input type="text" maxLength={5} value={form.short_name} onChange={e => setForm({ ...form, short_name: e.target.value.toUpperCase() })}
+                      placeholder="e.g. MNF" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest" />
+                    <p className="text-xs text-slate-400 mt-1">Max 5 chars for calendar display</p>
+                  </div>
+                  <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1">PIN (4 digits) *</label>
                     <input type="text" maxLength={4} value={form.pin} onChange={e => setForm({ ...form, pin: e.target.value.replace(/\D/g,'').slice(0,4) })}
                       placeholder="e.g. 1234" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest" />
@@ -175,6 +181,7 @@ export default function AdminTimesheet() {
                     <tr key={u.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                       <td className="py-2 px-4 font-semibold text-slate-800">{u.name}</td>
                       <td className="py-2 px-4 text-slate-500">{u.employee_id ?? '—'}</td>
+                      <td className="py-2 px-4 font-mono font-bold text-blue-700">{(u as {short_name?: string|null}).short_name ?? '—'}</td>
                       <td className="py-2 px-4 font-mono text-slate-400">••••</td>
                       <td className="py-2 px-4 text-slate-500">{u.designation ?? '—'}</td>
                       <td className="py-2 px-4 text-right font-mono text-slate-600">{u.hourly_rate ? `RM ${u.hourly_rate.toFixed(2)}` : '—'}</td>
