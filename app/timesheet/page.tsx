@@ -1,4 +1,5 @@
 'use client';
+import TimesheetCalendar from './TimesheetCalendar';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
@@ -21,7 +22,7 @@ function getColor(code: string, idx: number) {
   return FACTORY_COLORS[code] ?? FALLBACKS[idx % FALLBACKS.length];
 }
 
-type NavItem = 'overview' | 'sessions' | 'calculation';
+type NavItem = 'overview' | 'sessions' | 'calculation' | 'calendar';
 
 export default function TimesheetDashboard() {
   const [factories, setFactories] = useState<Factory[]>([]);
@@ -249,6 +250,11 @@ export default function TimesheetDashboard() {
         <div className="flex-1 overflow-y-auto p-6">
 
           {/* OVERVIEW */}
+          {nav === 'calendar' && (
+            <div className="h-full">
+              <TimesheetCalendar />
+            </div>
+          )}
           {nav === 'overview' && (
             <div>
               <div className="flex items-center justify-between mb-6">
