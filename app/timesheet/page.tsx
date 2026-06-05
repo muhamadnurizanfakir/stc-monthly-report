@@ -206,6 +206,7 @@ export default function TimesheetDashboard() {
         <div className="w-48 bg-blue-950 border-r border-blue-900 shrink-0 py-4">
           {[
             { id: 'overview', label: 'Overview', icon: '📊' },
+            { id: 'calendar', label: 'Calendar Activities', icon: '📅' },
             { id: 'sessions', label: 'Session History', icon: '📋' },
             { id: 'calculation', label: 'Calculation', icon: '💰' },
           ].map(item => (
