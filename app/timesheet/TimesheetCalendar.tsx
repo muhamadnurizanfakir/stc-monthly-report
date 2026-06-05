@@ -144,15 +144,15 @@ export default function TimesheetCalendar() {
     const clockIn = new Date(s.clock_in).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false });
     const clockOut = s.clock_out ? new Date(s.clock_out).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false }) : 'Active';
     return (
-      <div key={s.id} className="flex items-center gap-3 py-2 px-4 hover:bg-slate-50 transition-colors">
+      <div key={s.id} className="flex items-center gap-2 py-2 px-4 hover:bg-slate-50 transition-colors">
         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
-        <span className="text-xs font-bold px-2 py-0.5 rounded text-white shrink-0 w-12 text-center" style={{ background: color }}>{short}</span>
-        <span className="text-sm font-medium text-slate-700 flex-1 truncate">{name}</span>
-        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded shrink-0">{s.factory_code}</span>
-        <span className="text-xs font-mono text-slate-600 shrink-0">{clockIn} – {clockOut}</span>
-        {s.hours_worked && <span className="text-xs font-bold text-blue-600 shrink-0">{s.hours_worked.toFixed(1)}h</span>}
+        <span className="text-xs font-bold px-2 py-0.5 rounded text-white shrink-0 w-10 text-center" style={{ background: color }}>{short}</span>
+        <span className="text-xs font-mono text-slate-500 shrink-0 w-28">{clockIn} – {clockOut}</span>
+        {s.hours_worked && <span className="text-xs font-bold text-blue-600 shrink-0 w-8">{s.hours_worked.toFixed(1)}h</span>}
+        <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded shrink-0">{s.factory_code}</span>
+        <span className="text-sm font-medium text-slate-700 shrink-0">{name}</span>
         {!s.clock_out && <span className="text-xs text-green-500 font-bold animate-pulse shrink-0">● Active</span>}
-        {s.notes && <span className="text-xs text-slate-400 italic truncate max-w-36 shrink-0">📝 {s.notes}</span>}
+        {s.notes && <span className="text-xs text-slate-400 italic truncate">📝 {s.notes}</span>}
       </div>
     );
   }
