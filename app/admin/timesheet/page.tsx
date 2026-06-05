@@ -29,7 +29,7 @@ interface Factory {
   payment_terms: string | null;
 }
 
-const emptyForm = { name: '', employee_id: '', pin: '', designation: '', hourly_rate: '', default_factory: '', is_active: true };
+const emptyForm = { name: '', employee_id: '', short_name: '', pin: '', designation: '', hourly_rate: '', default_factory: '', is_active: true };
 
 export default function AdminTimesheet() {
   const [users, setUsers] = useState<TsUser[]>([]);
@@ -57,7 +57,7 @@ export default function AdminTimesheet() {
   async function handleSaveUser() {
     if (!form.name || form.pin.length !== 4) { alert('Name and 4-digit PIN required'); return; }
     setSaving(true);
-    const payload = { name: form.name, employee_id: form.employee_id || null, pin: form.pin, designation: form.designation || null, hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null, default_factory: form.default_factory || null, is_active: form.is_active };
+    const payload = { name: form.name, employee_id: form.employee_id || null, short_name: form.short_name || null, pin: form.pin, designation: form.designation || null, hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null, default_factory: form.default_factory || null, is_active: form.is_active };
     if (editingId) {
       await supabase.from('ts_users').update(payload).eq('id', editingId);
     } else {
@@ -182,7 +182,7 @@ export default function AdminTimesheet() {
                       <td className="py-2 px-4"><span className={"px-2 py-0.5 rounded text-xs font-semibold " + (u.is_active ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500")}>{u.is_active ? 'Active' : 'Inactive'}</span></td>
                       <td className="py-2 px-4">
                         <div className="flex gap-1">
-                          <button onClick={() => { setEditingId(u.id); setForm({ name: u.name, employee_id: u.employee_id ?? '', pin: u.pin, designation: u.designation ?? '', hourly_rate: u.hourly_rate?.toString() ?? '', default_factory: u.default_factory ?? '', is_active: u.is_active }); setShowForm(true); }}
+                          <button onClick={() => { setEditingId(u.id); setForm({ name: u.name, employee_id: u.employee_id ?? '', short_name: (u as {short_name?: string|null}).short_name ?? '', pin: u.pin, designation: u.designation ?? '', hourly_rate: u.hourly_rate?.toString() ?? '', default_factory: u.default_factory ?? '', is_active: u.is_active }); setShowForm(true); }}
                             className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100">✏️</button>
                           <button onClick={async () => { if (!confirm('Delete ' + u.name + '?')) return; await supabase.from('ts_users').delete().eq('id', u.id); fetchData(); }}
                             className="px-2 py-1 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100">🗑️</button>
