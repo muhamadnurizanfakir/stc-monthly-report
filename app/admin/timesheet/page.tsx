@@ -168,6 +168,7 @@ export default function AdminTimesheet() {
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="text-left py-2 px-4 font-semibold text-slate-500">Name</th>
                     <th className="text-left py-2 px-4 font-semibold text-slate-500">ID</th>
+                    <th className="text-left py-2 px-4 font-semibold text-slate-500">Short</th>
                     <th className="text-left py-2 px-4 font-semibold text-slate-500">PIN</th>
                     <th className="text-left py-2 px-4 font-semibold text-slate-500">Designation</th>
                     <th className="text-right py-2 px-4 font-semibold text-slate-500">Rate (RM/hr)</th>
