@@ -329,7 +329,7 @@ export default function ClockPage() {
                     <p className="text-5xl font-bold text-slate-800 font-mono mb-1">{formatElapsed(elapsed)}</p>
                     <p className="text-xs text-slate-400 mb-6">Since {new Date(activeSession.clock_in).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}</p>
                     <div className="mb-4 text-left">
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">Notes (optional)</label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Work Done Today</label>
                       <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
                         placeholder="What did you work on?" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
