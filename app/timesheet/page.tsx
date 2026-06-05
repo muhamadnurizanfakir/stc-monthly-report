@@ -71,7 +71,7 @@ export default function TimesheetDashboard() {
     const clockOut = editForm.clock_out ? new Date(date + 'T' + editForm.clock_out + ':00+08:00').toISOString() : null;
     const hrs = clockOut ? parseFloat(((new Date(clockOut).getTime() - new Date(clockIn).getTime()) / 3600000).toFixed(2)) : null;
     await supabase.from('ts_sessions').update({
-      clock_in: clockIn, clock_out: clockOut, hours_worked: hrs,
+      date: date, clock_in: clockIn, clock_out: clockOut, hours_worked: hrs,
       factory_code: editForm.factory_code, notes: editForm.notes || null,
     }).eq('id', editModal!.id);
     setEditModal(null); setModalPassword(''); setModalError('');
