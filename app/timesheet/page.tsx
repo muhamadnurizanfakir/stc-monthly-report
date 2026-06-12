@@ -42,6 +42,10 @@ export default function TimesheetDashboard() {
     return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   });
   const [filterUser, setFilterUser] = useState('');
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminError, setAdminError] = useState('');
+  const [adminSaving, setAdminSaving] = useState(false);
   const [allUsers, setAllUsers] = useState<{id: string; name: string}[]>([]);
 
   useEffect(() => { fetchData(); }, [selectedMonth]);
@@ -197,7 +201,7 @@ export default function TimesheetDashboard() {
           <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}
             className="border border-blue-800 bg-blue-900 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <a href="/timesheet/clock" className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-colors">🕐 Clock In/Out</a>
-          <a href="/admin/timesheet" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition-colors">⚙️ Manage</a>
+          <button onClick={() => { setShowAdminModal(true); setAdminPassword(''); setAdminError(''); }} className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition-colors">⚙️ Manage</button>
         </div>
       </div>
 
@@ -577,6 +581,42 @@ export default function TimesheetDashboard() {
               </button>
               <button onClick={() => { setEditModal(null); setModalPassword(''); setModalError(''); }}
                 className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Admin Password Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3 className="font-bold text-slate-800 mb-1">Admin Access</h3>
+            <p className="text-xs text-slate-500 mb-4">Enter admin password to manage users and factories</p>
+            <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !adminSaving && (async () => {
+                setAdminSaving(true);
+                const res = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPassword, type: 'admin' }) });
+                const data = await res.json();
+                if (data.ok) { window.location.href = '/admin/timesheet'; }
+                else { setAdminError('Wrong password.'); setAdminSaving(false); }
+              })()}
+              placeholder="Admin password" autoFocus
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            {adminError && <p className="text-xs text-red-500 mb-2">{adminError}</p>}
+            <div className="flex gap-2">
+              <button onClick={async () => {
+                setAdminSaving(true);
+                const res = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPassword, type: 'admin' }) });
+                const data = await res.json();
+                if (data.ok) { window.location.href = '/admin/timesheet'; }
+                else { setAdminError('Wrong password.'); setAdminSaving(false); }
+              }} disabled={adminSaving}
+                className="flex-1 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold disabled:opacity-50">
+                {adminSaving ? 'Verifying...' : 'Enter'}
+              </button>
+              <button onClick={() => setShowAdminModal(false)}
+                className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm hover:bg-slate-200">
+                Cancel
+              </button>
             </div>
           </div>
         </div>
