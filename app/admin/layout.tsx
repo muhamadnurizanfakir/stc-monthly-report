@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const ADMIN_PASSWORD = 'stc2026';
+const ADMIN_PASSWORD = 'stcadmin';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [authed, setAuthed] = useState(false);
